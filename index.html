@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPIC FURY — Strategic Command 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080b10;--bg2:#0d1117;--bg3:#111827;--bg4:#1a2236;
+  --border:#1e2d45;--border2:#253550;
+  --text:#c8d8f0;--text2:#7a9ab8;--text3:#3a5a78;
+  --usa:#3b82f6;--usa-dim:#1e3a5f;
+  --iran:#22c55e;--iran-dim:#14432a;
+  --israel:#eab308;--israel-dim:#4a3a02;
+  --gulf:#f97316;--gulf-dim:#4a2008;
+  --red:#ef4444;--red-dim:#4a1010;
+  --accent:#60a5fa;
+  --glass:rgba(255,255,255,0.03);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9999}
+#app{display:flex;flex-direction:column;height:100vh;max-width:1320px;margin:0 auto;padding:8px 16px;overflow:hidden}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;gap:12px;flex-wrap:wrap}
+.topbar-logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:3px;color:var(--accent)}
+.topbar-logo span{color:var(--text3)}
+.topbar-clock{font-size:12px;color:var(--text2);letter-spacing:2px}
+.side-badge{font-size:10px;font-weight:500;padding:3px 10px;border-radius:3px;letter-spacing:2px;border:1px solid;display:none}
+.side-badge.active{display:inline-block}
+.side-badge.usa{color:var(--usa);border-color:var(--usa-dim);background:rgba(59,130,246,0.08)}
+.side-badge.iran{color:var(--iran);border-color:var(--iran-dim);background:rgba(34,197,94,0.08)}
+.side-badge.israel{color:var(--israel);border-color:var(--israel-dim);background:rgba(234,179,8,0.08)}
+.side-badge.gulf{color:var(--gulf);border-color:var(--gulf-dim);background:rgba(249,115,22,0.08)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px}
+.metric-label{font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:6px;text-transform:uppercase}
+.metric-value{font-size:20px;font-family:'Syne',sans-serif;font-weight:800;line-height:1;margin-bottom:6px}
+.metric-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.metric-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.fill-t{background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}
+.fill-f{background:linear-gradient(90deg,#818cf8,#c084fc,#ef4444)}
+.fill-s{background:linear-gradient(90deg,#ef4444,#eab308,#22c55e)}
+.fill-o{background:linear-gradient(90deg,#f97316,#eab308)}
+.metric-sub{font-size:9px;color:var(--text3);margin-top:4px;letter-spacing:1px}
+
+/* TICKER */
+.event-ticker{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;overflow:hidden}
+.ticker-label{font-size:9px;letter-spacing:2px;color:var(--text3);flex-shrink:0}
+.ticker-sep{width:1px;height:16px;background:var(--border2);flex-shrink:0}
+.ticker-text{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.ticker-badge{font-size:9px;padding:2px 8px;border-radius:3px;letter-spacing:1px;flex-shrink:0;border:1px solid}
+.tb-pol{color:var(--usa);border-color:var(--usa-dim);background:rgba(59,130,246,0.08)}
+.tb-mil{color:var(--red);border-color:var(--red-dim);background:rgba(239,68,68,0.08)}
+.tb-eco{color:var(--gulf);border-color:var(--gulf-dim);background:rgba(249,115,22,0.08)}
+.tb-dip{color:var(--iran);border-color:var(--iran-dim);background:rgba(34,197,94,0.08)}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:480px 1fr 300px;gap:10px;flex:1;min-height:0;align-items:stretch}
+.left-col{display:flex;flex-direction:column;gap:10px}
+
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px}
+.panel-title{font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.panel-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* MAP col */
+.map-col{display:flex;flex-direction:column;min-height:0}
+.map-col .panel{flex:1;display:flex;flex-direction:column;min-height:0}
+#map-container{flex:1 !important;height:auto !important;min-height:0}
+
+/* LOG col — fills grid cell height, news pinned at bottom */
+.log-col{display:flex;flex-direction:column;gap:10px;min-height:0;height:100%}
+.log-panel{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.log-scroll{flex:1;overflow-y:auto;margin-top:8px;padding-right:4px;min-height:0}
+.news-panel{flex-shrink:0;height:138px;display:flex;flex-direction:column}
+.news-panel .panel-title{flex-shrink:0}
+#events-list{flex:1;overflow-y:auto;padding-right:4px;min-height:0}
+.log-scroll::-webkit-scrollbar{width:3px}
+.log-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+#events-list::-webkit-scrollbar{width:3px}
+#events-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* MAP */
+.map-label{font-family:'DM Mono',monospace;font-size:9px;fill:rgba(200,216,240,0.55);pointer-events:none;letter-spacing:1px}
+.map-clabel{font-family:'DM Mono',monospace;font-size:8px;fill:rgba(90,140,185,0.4);pointer-events:none}
+@keyframes mpulse{0%,100%{opacity:0.9}50%{opacity:0.3}}
+.mpulse{animation:mpulse 1.6s ease-in-out infinite}
+.log-entry{margin-bottom:14px;opacity:0;animation:fadeUp 0.3s forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.log-stamp{font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.log-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.log-src{font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:3px;display:block}
+.log-text{font-size:12px;color:var(--text);line-height:1.65;display:block}
+.log-text.player{color:var(--accent);border-left:2px solid var(--accent);padding-left:8px}
+.log-opp{font-size:11px;color:var(--text2);line-height:1.55;display:block;margin-top:5px;padding:6px 10px;background:var(--glass);border-radius:4px;border-left:2px solid var(--border2)}
+@keyframes blink{0%,100%{opacity:0.4}50%{opacity:1}}
+.log-thinking{font-size:11px;color:var(--text3);display:block;animation:blink 1.2s infinite}
+
+/* CHOICES */
+.choices-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;flex:1;min-height:0;overflow:hidden}
+
+/* RIGHT col — choices grow with scroll, command pinned at bottom */
+.right-col{display:flex;flex-direction:column;gap:0;min-height:0;overflow:hidden}
+.tab-row{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0}
+#pane-mil{gap:8px;overflow:hidden}
+.choices-panel{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.choices-panel .choices-list{flex:1;min-height:0}
+.command-panel{flex-shrink:0;margin-top:8px}
+.cbtn{flex:1;min-height:0;display:block;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:6px 10px 4px 14px;cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);line-height:1.4;transition:all 0.15s;position:relative;overflow:hidden}
+.cbtn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:5px 0 0 5px}
+.cbtn.hot::before{background:var(--red)}.cbtn.neu::before{background:var(--usa)}.cbtn.saf::before{background:var(--iran)}
+.cbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.cbtn:disabled{opacity:0.2;cursor:not-allowed}
+.ctag{font-size:9px;letter-spacing:1px;margin-top:4px;display:block}
+.cbtn.hot .ctag{color:#ef4444}.cbtn.neu .ctag{color:var(--usa)}.cbtn.saf .ctag{color:var(--iran)}
+
+/* CUSTOM */
+.cinp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:6px 10px;resize:none;min-height:40px;max-height:40px;line-height:1.5;margin-top:6px;margin-bottom:5px}
+.cinp:focus{outline:none;border-color:var(--border2)}
+.csend{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text2);font-family:'DM Mono',monospace;font-size:10px;padding:8px;cursor:pointer;letter-spacing:2px;transition:all 0.15s}
+.csend:hover{background:var(--bg4);color:var(--text)}
+.csend:disabled{opacity:0.2;cursor:not-allowed}
+
+/* EVENTS */
+.ev-item{padding:7px 0;border-bottom:1px solid var(--border);font-size:10px;line-height:1.5}
+.ev-item:last-child{border-bottom:none}
+.ev-type{font-size:8px;letter-spacing:1px;padding:1px 6px;border-radius:2px;border:1px solid;margin-right:6px}
+.ev-type.pol{color:var(--usa);border-color:var(--usa-dim)}.ev-type.mil{color:var(--red);border-color:var(--red-dim)}
+.ev-type.eco{color:var(--gulf);border-color:var(--gulf-dim)}.ev-type.dip{color:var(--iran);border-color:var(--iran-dim)}
+.ev-text{color:var(--text2)}
+
+/* SIDE SELECT */
+#side-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:24px}
+.ss-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:4px;color:var(--text);text-align:center}
+.ss-title span{color:var(--accent)}
+.ss-sub{font-size:10px;color:var(--text3);letter-spacing:3px;text-align:center}
+.ss-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:720px;width:100%}
+.ss-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:22px 18px;cursor:pointer;transition:all 0.2s;text-align:left;font-family:'DM Mono',monospace}
+.ss-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.ss-card.usa:hover{border-color:var(--usa);box-shadow:0 8px 32px rgba(59,130,246,0.12)}
+.ss-card.iran:hover{border-color:var(--iran);box-shadow:0 8px 32px rgba(34,197,94,0.12)}
+.ss-card.israel:hover{border-color:var(--israel);box-shadow:0 8px 32px rgba(234,179,8,0.12)}
+.ss-card.gulf:hover{border-color:var(--gulf);box-shadow:0 8px 32px rgba(249,115,22,0.12)}
+.ss-flag{font-size:26px;margin-bottom:10px}
+.ss-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;margin-bottom:3px}
+.ss-card.usa .ss-name{color:var(--usa)}.ss-card.iran .ss-name{color:var(--iran)}
+.ss-card.israel .ss-name{color:var(--israel)}.ss-card.gulf .ss-name{color:var(--gulf)}
+.ss-role{font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+.ss-desc{font-size:10px;color:var(--text2);line-height:1.6}
+
+/* DIPLOMACY */
+.dipl-panel{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.dipl-panel.open{display:flex}
+.dipl-scroll{flex:1;overflow-y:auto;padding-right:4px;min-height:0;margin-top:6px}
+.dipl-country{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-bottom:6px}
+.dipl-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.dipl-name{font-size:10px;font-weight:500;color:var(--text);letter-spacing:1px;flex:1}
+.dipl-status{font-size:8px;letter-spacing:1px;padding:1px 6px;border-radius:2px;border:1px solid}
+.ds-n{color:var(--text3);border-color:var(--border)}
+.ds-l{color:#eab308;border-color:#4a3a02;background:rgba(234,179,8,0.06)}
+.ds-a{color:#22c55e;border-color:#14432a;background:rgba(34,197,94,0.06)}
+.ds-h{color:#ef4444;border-color:#4a1010;background:rgba(239,68,68,0.06)}
+.dipl-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.dipl-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.dipl-bar-fill{height:100%;border-radius:2px;transition:width 0.5s;background:linear-gradient(90deg,#3b82f6,#22c55e)}
+.dipl-val{font-size:9px;color:var(--text2);min-width:22px;text-align:right}
+.dipl-desc{font-size:9px;color:var(--text3);line-height:1.4;margin-bottom:5px}
+.dipl-act{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text2);font-family:'DM Mono',monospace;font-size:9px;padding:5px 8px;cursor:pointer;letter-spacing:1px;transition:all 0.15s;text-align:left}
+.dipl-act:hover{background:var(--bg4);color:var(--text)}
+.dipl-act:disabled{opacity:0.2;cursor:not-allowed}
+.tab-row{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;flex-shrink:0}
+.tab-btn{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:5px 10px;background:none;border:none;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn:hover:not(.active){color:var(--text2)}
+/* PROVINCE overlay */
+.prov-path{transition:fill 0.5s,opacity 0.5s;pointer-events:none}
+.prov-label{font-family:'DM Mono',monospace;font-size:7px;fill:rgba(255,255,255,0.55);pointer-events:none}
+
+/* OUTCOME */
+#outcome{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:20px;padding:40px}
+#outcome.show{display:flex}
+.ot-title{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:4px}
+.ot-body{font-size:12px;color:var(--text2);line-height:1.9;max-width:500px;white-space:pre-line}
+.ot-btn{background:var(--bg2);color:var(--text2);border:1px solid var(--border);border-radius:5px;font-family:'DM Mono',monospace;font-size:10px;padding:10px 28px;cursor:pointer;letter-spacing:3px;transition:all 0.15s}
+.ot-btn:hover{background:var(--bg4);color:var(--text)}
+
+/* GAME */
+#game-area{display:none;flex-direction:column;gap:0;flex:1;min-height:0;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div class="topbar">
+  <div class="topbar-logo">EPIC<span>·</span>FURY <span style="font-weight:400;color:var(--text3);font-size:12px">// STRATEGIC COMMAND 2026</span></div>
+  <div style="font-size:10px;color:var(--text3);letter-spacing:1px">ОПЕРАЦИя «ЭПИЧЕСКАЯ ЯРОСТЬ» / CENTCOM-IRGC-IDF-GCC</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="side-badge-display"></div>
+    <div class="topbar-clock" id="hd-clock">28 ФЕВ 2026 / 01:00 UTC</div>
+  </div>
+</div>
+
+<!-- SIDE SELECT -->
+<div id="side-screen">
+  <div class="ss-title">EPIC <span>FURY</span></div>
+  <div class="ss-sub">ВОЙНА США–ИРАН 2026 / ВЫБЕРИТЕ СТОРОНУ</div>
+  <div class="ss-cards">
+    <div class="ss-card usa" onclick="chooseSide('usa')">
+      <div class="ss-flag">🇺🇸</div>
+      <div class="ss-name">США</div>
+      <div class="ss-role">Советник Трампа / Ситуационная комната</div>
+      <div class="ss-desc">Операция «Эпическая ярость» запущена. Первые ракеты на маршруте к 85 целям. Иран ещё не знает масштаба. Конгресс не в курсе. Цены на нефть начинают расти.</div>
+    </div>
+    <div class="ss-card iran" onclick="chooseSide('iran')">
+      <div class="ss-flag">🇮🇷</div>
+      <div class="ss-name">ИРАН</div>
+      <div class="ss-role">Командование КСИР / Тегеран</div>
+      <div class="ss-desc">Хаменеи в бункере. Флот под угрозой. Ядерные объекты атакованы. КСИР ещё боеспособен. Хезболла и хуситы готовы. Как сохранить государство?</div>
+    </div>
+    <div class="ss-card israel" onclick="chooseSide('israel')">
+      <div class="ss-flag">🇮🇱</div>
+      <div class="ss-name">ИЗРАИЛЬ</div>
+      <div class="ss-role">Советник Нетаньяху / Штаб ЦАХАЛ</div>
+      <div class="ss-desc">200 самолётов, 500 целей — операция «Рёв льва» в воздухе. Хезболла молчит, но ненадолго. ООН созывает Совбез. Союзники нервничают.</div>
+    </div>
+    <div class="ss-card gulf" onclick="chooseSide('gulf')">
+      <div class="ss-flag">🇸🇦</div>
+      <div class="ss-name">СТРАНЫ ЗАЛИВА</div>
+      <div class="ss-role">Совет GCC / Эр-Рияд + Абу-Даби</div>
+      <div class="ss-desc">Война у порога. Нефтяные объекты под угрозой. Иран — враг, но и сосед. США — союзник, но в хаосе. Хуситы атакуют танкеры. Нужно выжить.</div>
+    </div>
+  </div>
+  <div style="position:fixed;bottom:10px;right:14px;font-size:9px;color:var(--text3);letter-spacing:1px;font-family:'DM Mono',monospace;opacity:0.5">v0.9.0-beta.1</div>
+</div>
+<div id="game-area">
+
+  <div class="metrics" id="metrics-row">
+    <div class="metric-card">
+      <div class="metric-label">Напряжённость конфликта</div>
+      <div class="metric-value" id="m-t" style="color:var(--red)">40</div>
+      <div class="metric-bar"><div class="metric-fill fill-t" id="bar-t" style="width:40%"></div></div>
+      <div class="metric-sub" id="sub-t">КОНФЛИКТ</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Усталость от войны</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-bottom:4px">
+        <div style="font-size:8px;color:var(--text3);letter-spacing:1px">🇺🇸 США</div>
+        <div style="font-size:8px;color:var(--text3);letter-spacing:1px">🇮🇷 ИРАН</div>
+        <div class="metric-bar" style="margin:0"><div class="metric-fill fill-f" id="bar-f-usa" style="width:20%"></div></div>
+        <div class="metric-bar" style="margin:0"><div class="metric-fill fill-f" id="bar-f-iran" style="width:30%"></div></div>
+        <div style="font-size:9px;font-weight:700;color:#818cf8" id="val-f-usa">20</div>
+        <div style="font-size:9px;font-weight:700;color:#818cf8" id="val-f-iran">30</div>
+        <div style="font-size:8px;color:var(--text3);letter-spacing:1px">🇮🇱 ИЗРАИЛЬ</div>
+        <div style="font-size:8px;color:var(--text3);letter-spacing:1px">🇸🇦 GCC</div>
+        <div class="metric-bar" style="margin:0"><div class="metric-fill fill-f" id="bar-f-israel" style="width:15%"></div></div>
+        <div class="metric-bar" style="margin:0"><div class="metric-fill fill-f" id="bar-f-gulf" style="width:10%"></div></div>
+        <div style="font-size:9px;font-weight:700;color:#818cf8" id="val-f-israel">15</div>
+        <div style="font-size:9px;font-weight:700;color:#818cf8" id="val-f-gulf">10</div>
+      </div>
+      <div class="metric-sub" id="sub-f"></div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Поддержка союзников</div>
+      <div class="metric-value" id="m-s" style="color:var(--iran)">65</div>
+      <div class="metric-bar"><div class="metric-fill fill-s" id="bar-s" style="width:65%"></div></div>
+      <div class="metric-sub" id="sub-s">КОАЛИЦИЯ</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Нефть Brent / баррель</div>
+      <div class="metric-value" id="m-o" style="color:var(--gulf)">$72</div>
+      <div class="metric-bar"><div class="metric-fill fill-o" id="bar-o" style="width:10%"></div></div>
+      <div class="metric-sub" id="sub-o">+0% к довоенному</div>
+    </div>
+  </div>
+
+  <div class="event-ticker">
+    <div class="ticker-label">СОБЫТИЯ</div>
+    <div class="ticker-sep"></div>
+    <div class="ticker-text" id="ticker-text">Ожидание сводки...</div>
+    <div class="ticker-badge tb-pol" id="ticker-badge">ВНУТР.</div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- COL 1: MAP -->
+    <div class="map-col">
+      <div class="panel">
+        <div class="panel-title">Театр военных действий — Ближний Восток 2026</div>
+        <div id="map-container" style="position:relative;background:#070d18;border-radius:4px;overflow:hidden;cursor:grab">
+          <div id="marker-tooltip" style="display:none;position:absolute;z-index:10;background:#0d1117;border:1px solid #1e2d45;border-radius:4px;padding:5px 9px;font-family:'DM Mono',monospace;font-size:9px;color:#c8d8f0;pointer-events:none;white-space:nowrap;letter-spacing:0.5px"></div>
+          <svg id="map-svg" style="width:100%;height:100%" viewBox="0 0 480 480" preserveAspectRatio="xMidYMid meet"></svg>
+          <canvas id="map-canvas" style="position:absolute;inset:0;pointer-events:none"></canvas>
+          <div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:2px;color:#3a5a78">ЗАГРУЗКА КАРТЫ...</div>
+          <!-- Legend popup -->
+          <div id="map-legend" style="display:none;position:absolute;bottom:34px;left:6px;background:#0d1117;border:1px solid #1e2d45;border-radius:4px;padding:8px 10px;font-family:'DM Mono',monospace;font-size:8px;color:#7a9ab8;letter-spacing:0.5px;z-index:10;pointer-events:none;line-height:1.9">
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><circle cx="5" cy="5" r="4" fill="#c8d8f0"/></svg>ГОРОД<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><polygon points="5,1 9,9 1,9" fill="#c8d8f0"/></svg>АЭРОДРОМ<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><polygon points="5,1 9,5 5,9 1,5" fill="#c8d8f0"/></svg>РАКЕТЫ<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><rect x="2" y="2" width="6" height="6" transform="rotate(45 5 5)" fill="#c8d8f0"/></svg>РАДАР<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><rect x="2" y="2" width="6" height="6" fill="#c8d8f0"/></svg>БАЗА<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><rect x="1" y="3" width="8" height="4" rx="1" fill="#c8d8f0"/></svg>АВИАНОСЕЦ<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><circle cx="5" cy="5" r="4" fill="#f97316"/></svg>ЯДЕРНЫЙ ОБ.<br>
+            <svg width="10" height="10" style="vertical-align:middle;margin-right:5px"><circle cx="5" cy="5" r="4" fill="#4a7a5a"/></svg>ОПОЛЧЕНИЕ
+          </div>
+          <!-- Legend toggle button -->
+          <div style="position:absolute;bottom:6px;left:6px">
+            <button onclick="var l=document.getElementById('map-legend');l.style.display=l.style.display==='none'?'block':'none'" style="background:#0d1117;border:1px solid #1e2d45;color:#7a9ab8;font-family:'DM Mono',monospace;font-size:8px;padding:0 6px;height:24px;cursor:pointer;border-radius:3px;letter-spacing:1px">ЛЕГЕНДА</button>
+          </div>
+          <div style="position:absolute;bottom:6px;right:6px;display:flex;flex-direction:column;gap:3px">
+            <button onclick="mapZoom(1.4)" style="background:#0d1117;border:1px solid #1e2d45;color:#7a9ab8;font-size:14px;width:24px;height:24px;cursor:pointer;border-radius:3px;line-height:1">+</button>
+            <button onclick="mapZoom(1/1.4)" style="background:#0d1117;border:1px solid #1e2d45;color:#7a9ab8;font-size:14px;width:24px;height:24px;cursor:pointer;border-radius:3px;line-height:1">−</button>
+            <button onclick="mapReset()" style="background:#0d1117;border:1px solid #1e2d45;color:#7a9ab8;font-size:9px;width:24px;height:24px;cursor:pointer;border-radius:3px;line-height:1">⌂</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2: LOG + EVENTS -->
+    <div class="log-col">
+      <div class="panel log-panel">
+        <div class="panel-title">Оперативный журнал</div>
+        <div class="log-scroll" id="log"></div>
+      </div>
+      <div class="panel news-panel">
+        <div class="panel-title">Новости</div>
+        <div id="events-list"></div>
+      </div>
+    </div>
+
+    <!-- COL 3: CONTROLS -->
+    <div class="right-col">
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-mil" onclick="switchTab('mil')">ДЕЙСТВИЯ</button>
+        <button class="tab-btn" id="tab-dip" onclick="switchTab('dip')">ДИПЛОМАТИЯ</button>
+        <button class="tab-btn" id="tab-war" onclick="switchTab('war')">ВОЙНА</button>
+        <button class="tab-btn" id="tab-pol" onclick="switchTab('pol')">ПОЛИТИКА</button>
+      </div>
+
+      <!-- ACTIONS TAB -->
+      <div id="pane-mil" style="display:flex;flex-direction:column;flex:1;min-height:0;padding-top:8px;gap:8px;overflow:hidden">
+        <div class="panel choices-panel">
+          <div class="panel-title">Варианты решений</div>
+          <div class="choices-list" id="choices"></div>
+        </div>
+        <div class="panel command-panel">
+          <div class="panel-title">Собственный приказ</div>
+          <textarea class="cinp" id="custom-inp" placeholder="Введите приказ..."></textarea>
+          <button class="csend" id="custom-send" onclick="sendCustom()">↵ ПЕРЕДАТЬ ПРИКАЗ</button>
+        </div>
+      </div>
+
+      <!-- DIPLOMACY TAB -->
+      <div id="pane-dip" style="display:none;flex-direction:column;flex:1;min-height:0;padding-top:8px">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+          <div class="panel-title">Дипломатические контакты</div>
+          <div class="dipl-scroll" id="dipl-list"></div>
+        </div>
+      </div>
+
+      <!-- WAR TAB -->
+      <div id="pane-war" style="display:none;flex-direction:column;flex:1;min-height:0;padding-top:8px">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+          <div class="panel-title">Военная обстановка</div>
+          <div class="dipl-scroll" id="war-list"></div>
+        </div>
+      </div>
+
+      <!-- POLITICS TAB -->
+      <div id="pane-pol" style="display:none;flex-direction:column;flex:1;min-height:0;padding-top:8px">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+          <div class="panel-title">Внутриполитические инструменты</div>
+          <div class="dipl-scroll" id="pol-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="outcome">
+  <div class="ot-title" id="ot-title"></div>
+  <div class="ot-body" id="ot-body"></div>
+  <button class="ot-btn" onclick="showSideSelect()">↺ НОВАЯ ИГРА</button>
+</div>
+
+</div>
+<script>
+var API_KEY='';
+var API_MODEL='claude-haiku-4-5-20251001';
+var API_URL='/api/chat';  // Vercel serverless proxy
+
+// ── STATE ──────────────────────────────────────────────────────
+var tension=40, support=65, oil=72.4;
+// Per-faction fatigue (0-100)
+var fatigue={usa:20, iran:30, israel:15, gulf:10};
+// Military strength (0-100%) — degraded by attacks, recovers slowly
+var military={usa:100, iran:65, israel:90, gulf:70};
+// Missile/strike stockpiles (finite resource)
+var missiles={usa:400, iran:180, israel:300, gulf:80};
+var MISSILES_START={usa:400, iran:180, israel:300, gulf:80};
+// Cumulative losses (for display)
+var losses={usa:0, iran:0, israel:0, gulf:0};
+// Khamenei alive flag (for Iran side)
+var khameneiAlive=true;
+var turn=0, busy=false, side='usa';
+var savedChoices=[], savedTags=[], hist=[], recentEvents=[];
+var MONTHS=['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+var START_MS=new Date(2026,1,28,1,0,0).getTime();
+var OIL_BASE=72.4; // Brent on 28 Feb 2026
+
+// ── TIME ──────────────────────────────────────────────────────
+function pad(n){return n<10?'0'+n:''+n;}
+function fmt(t){var d=new Date(START_MS+t*8*3600000);return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' / '+pad(d.getHours())+':00 UTC';}
+function updateClock(t){document.getElementById('hd-clock').textContent=fmt(t);}
+
+// ── METRICS ───────────────────────────────────────────────────
+function updateMetrics(){
+  var te=document.getElementById('m-t');
+  te.textContent=tension;
+  te.style.color=tension>70?'#ef4444':tension>45?'#eab308':'#22c55e';
+  document.getElementById('bar-t').style.width=tension+'%';
+  var tlv=tension<20?1:tension<40?2:tension<60?3:tension<80?4:5;
+  var subT = document.getElementById('sub-t');
+  var barT = document.getElementById('bar-t');
+  var catTurns = (tension>=100 && window._tensionMaxTurn!==undefined) ? (turn - window._tensionMaxTurn) : -1;
+  if(catTurns >= 0){
+    // Show countdown dots: ●●● → ●●○ → ●○○
+    var dots = ['●●●','●●○','●○○'][catTurns] || '○○○';
+    subT.innerHTML = '<span style="color:#ef4444;letter-spacing:3px">'+dots+' КАТАСТРОФА</span>';
+    // Pulse the bar red
+    // On last turn before catastrophe: deep crimson bar
+    barT.style.background = catTurns === 2 ? '#7f0000' : '#ef4444';
+    barT.style.animation = '';
+  } else {
+    subT.textContent = ['','СТАБИЛЬНО','НАПРЯЖЁННОСТЬ','КОНФЛИКТ','КРИЗИС','ВОЙНА'][tlv];
+    barT.style.background = '';
+    barT.style.animation = '';
+  }
+
+  // Per-faction fatigue bars
+  ['usa','iran','israel','gulf'].forEach(function(f){
+    var v=fatigue[f];
+    var bar=document.getElementById('bar-f-'+f);
+    var val=document.getElementById('val-f-'+f);
+    if(bar)bar.style.width=v+'%';
+    if(val){val.textContent=v;val.style.color=v>70?'#ef4444':v>40?'#c084fc':'#818cf8';}
+  });
+  // sub-f intentionally empty (4 countries can't share one label)
+  document.getElementById('sub-f').textContent='';
+
+  var se=document.getElementById('m-s');
+  se.textContent=support;
+  se.style.color=support>50?'#22c55e':support>25?'#eab308':'#ef4444';
+  document.getElementById('bar-s').style.width=support+'%';
+  document.getElementById('sub-s').textContent=support>60?'КОАЛИЦИЯ ДЕРЖИТСЯ':support>40?'СОЮЗНИКИ КОЛЕБЛЮТСЯ':support>20?'БАЗЫ ЗАКРЫВАЮТСЯ':'ПОЛНАЯ ИЗОЛЯЦИЯ';
+
+  // Oil: show actual value and % change from base
+  var oilRound=Math.round(oil*10)/10;
+  document.getElementById('m-o').textContent='$'+oilRound;
+  var pct=Math.round((oil-OIL_BASE)/OIL_BASE*100);
+  var pctStr=(pct>=0?'+':'')+pct+'% к довоенному';
+  document.getElementById('sub-o').textContent=pctStr;
+  // Bar: 0% = $60, 100% = $200
+  document.getElementById('bar-o').style.width=Math.max(2,Math.min(100,((oil-60)/140)*100))+'%';
+  var oe=document.getElementById('m-o');
+  oe.style.color=oil>120?'#ef4444':oil>90?'#f97316':'#eab308';
+
+  if(typeof window.onMetricsUpdate==='function') window.onMetricsUpdate();
+  // Refresh war panel if currently visible
+  if(document.getElementById('pane-war') && document.getElementById('pane-war').style.display!=='none'){
+    if(typeof renderWarPanel==='function') renderWarPanel();
+  }
+}
+
+// ── EVENTS — ALL FACTIONS, tagged with originating side ──────
+// Each event: {text, type, side, df_usa, df_iran, df_israel, df_gulf, ds, oil_abs, oil_delta}
+// oil_abs: set oil to this absolute value (null = use oil_delta)
+// oil_delta: relative change
+var ALL_EVENTS = [
+  // ── USA internal ──
+  {side:'usa', type:'pol', text:'Конгресс требует голосования об официальном объявлении войны',        df:{usa:8},  ds:-5, oil:null, od:2},
+  {side:'usa', type:'pol', text:'Антивоенные протесты охватили 15 американских городов',              df:{usa:14}, ds:0,  oil:null, od:0},
+  {side:'usa', type:'pol', text:'Рейтинг Трампа упал до 38% — самый низкий с начала срока',           df:{usa:10}, ds:-3, oil:null, od:0},
+  {side:'usa', type:'pol', text:'Сенаторы-республиканцы требуют стратегии выхода из конфликта',       df:{usa:9},  ds:-4, oil:null, od:1},
+  {side:'usa', type:'eco', text:'ФРС экстренно рассматривает угрозу рецессии из-за нефтяного шока',   df:{usa:7},  ds:-5, oil:null, od:5},
+  {side:'usa', type:'eco', text:'Цены на топливо в США выросли на 40% — рекорд с 2022 года',         df:{usa:8},  ds:-3, oil:null, od:4},
+  {side:'usa', type:'mil', text:'Иранские кибератаки парализовали часть инфраструктуры SWIFT',        df:{usa:5},  ds:0,  oil:null, od:2},
+  {side:'usa', type:'dip', text:'Союзники по НАТО требуют немедленной деэскалации',                   df:{usa:3},  ds:-8, oil:null, od:0},
+  {side:'usa', type:'pol', text:'Ветераны войн в Ираке организовали марш против новой войны на Ближнем Востоке', df:{usa:12}, ds:-2, oil:null, od:0},
+  {side:'usa', type:'eco', text:'Авиакомпании США несут $4 млрд убытков из-за закрытия воздушного пространства', df:{usa:6}, ds:-2, oil:null, od:3},
+
+  // ── IRAN internal ──
+  {side:'iran', type:'pol', text:'Массовые похороны в Тегеране — сотни тысяч вышли на улицы',         df:{iran:-5}, ds:5,  oil:null, od:3},
+  {side:'iran', type:'pol', text:'Аятолла Хатами призвал к джихаду против США и Израиля',             df:{iran:-8}, ds:8,  oil:null, od:2},
+  {side:'iran', type:'pol', text:'Подпольные группы в Тегеране начали антивоенные листовки',          df:{iran:10}, ds:-2, oil:null, od:0},
+  {side:'iran', type:'eco', text:'Иранский риал обвалился на 65%, дефицит продовольствия',            df:{iran:15}, ds:-4, oil:null, od:2},
+  {side:'iran', type:'eco', text:'Иранские банки заморожены международными санкциями',                 df:{iran:12}, ds:-3, oil:null, od:1},
+  {side:'iran', type:'mil', text:'КСИР объявил мобилизацию резервистов во всех провинциях',           df:{iran:-6}, ds:4,  oil:null, od:2},
+  {side:'iran', type:'dip', text:'Россия объявила о «гуманитарной поддержке» — поставки зерна и медикаментов', df:{iran:0}, ds:10, oil:null, od:0},
+  {side:'iran', type:'dip', text:'Китай призвал к немедленному прекращению огня, угрожая санкциями США', df:{iran:0}, ds:6, oil:null, od:-2},
+  {side:'iran', type:'mil', text:'Хуситы потопили нефтяной танкер в Красном море — второй за неделю',  df:{iran:-8, gulf:5}, ds:3, oil:null, od:4},
+  {side:'iran', type:'pol', text:'Бывший президент Роухани призвал к переговорам — разногласия в элите', df:{iran:8}, ds:-2, oil:null, od:0},
+
+  // ── ISRAEL internal ──
+  {side:'israel', type:'pol', text:'Оппозиция в Кнессете: «Нетаньяху ведёт нас к войне на три фронта»', df:{israel:10}, ds:-5, oil:null, od:0},
+  {side:'israel', type:'pol', text:'Демонстрации семей заложников — требуют прекратить войну',         df:{israel:8},  ds:-3, oil:null, od:0},
+  {side:'israel', type:'mil', text:'Ракеты Хезболлы «Радван» впервые достигли пригородов Тель-Авива',  df:{israel:3},  ds:-4, oil:null, od:2},
+  {side:'israel', type:'mil', text:'Запасы перехватчиков «Железного купола» упали до 35%',             df:{israel:5},  ds:-5, oil:null, od:0},
+  {side:'israel', type:'dip', text:'США предупредили: следующий транш боеприпасов — последний без перемирия', df:{israel:8}, ds:-10, oil:null, od:0},
+  {side:'israel', type:'dip', text:'ООН: резолюция о немедленном прекращении огня принята 14-1',       df:{israel:6},  ds:-12, oil:null, od:0},
+  {side:'israel', type:'eco', text:'Арабская лига ввела экономический бойкот израильских товаров',     df:{israel:7},  ds:-6,  oil:null, od:0},
+  {side:'israel', type:'pol', text:'Генштаб предупредил: война на два фронта требует дополнительной мобилизации', df:{israel:9}, ds:-3, oil:null, od:0},
+  {side:'israel', type:'mil', text:'ХАМАС объявил о возобновлении активных операций в Газе',           df:{israel:4},  ds:-3,  oil:null, od:1},
+  {side:'israel', type:'pol', text:'Широкая коалиция распалась: ультраправые вышли из правительства',  df:{israel:12}, ds:-4,  oil:null, od:0},
+
+  // ── GCC internal ──
+  {side:'gulf', type:'eco', text:'Нефть Brent достигла $95 — рынки нервничают',                        df:{gulf:-5, usa:3}, ds:6, oil:95, od:0},
+  {side:'gulf', type:'eco', text:'Трудовые мигранты массово покидают ОАЭ — экономика под угрозой',    df:{gulf:12}, ds:-3, oil:null, od:2},
+  {side:'gulf', type:'mil', text:'Хуситы угрожают атаковать Saudi Aramco — Абкайк в зоне риска',      df:{gulf:10}, ds:-5, oil:null, od:3},
+  {side:'gulf', type:'dip', text:'МБС провёл экстренные переговоры с лидерами Китая и Индии',         df:{gulf:0},  ds:6,  oil:null, od:-3},
+  {side:'gulf', type:'dip', text:'Катар предложил площадку для переговоров США–Иран',                  df:{gulf:-4}, ds:4,  oil:null, od:-2},
+  {side:'gulf', type:'pol', text:'ОАЭ закрыли воздушное пространство для военных рейсов',              df:{gulf:0},  ds:5,  oil:null, od:1},
+  {side:'gulf', type:'eco', text:'Ормузский пролив частично заблокирован — страховки на танкеры взлетели', df:{gulf:8}, ds:-4, oil:null, od:18},
+  {side:'gulf', type:'pol', text:'Кувейт выслал иранского посла, закрыл границу',                      df:{gulf:3},  ds:4,  oil:null, od:2},
+  {side:'gulf', type:'dip', text:'Турция предложила выступить посредником в урегулировании',           df:{gulf:-2}, ds:2,  oil:null, od:-2},
+  {side:'gulf', type:'eco', text:'Саудовская Аравия увеличила добычу нефти для стабилизации рынков',   df:{gulf:-3}, ds:3,  oil:null, od:-5},
+
+  // ── Global events (shown for all) ──
+  {side:'global', type:'dip', text:'Совбез ООН экстренно заседает — Россия и Китай блокируют резолюцию', df:{usa:2, israel:3}, ds:-3, oil:null, od:2},
+  {side:'global', type:'eco', text:'Мировые рынки рухнули — Dow Jones -4.2% за сутки',               df:{usa:5}, ds:-2, oil:null, od:4},
+  {side:'global', type:'mil', text:'Иранские прокси атаковали базы США в Ираке и Сирии',              df:{iran:-5, usa:4}, ds:-2, oil:null, od:5},
+  {side:'global', type:'dip', text:'G7 требует немедленного прекращения огня, угрожая санкциями',     df:{usa:4, israel:4}, ds:-6, oil:null, od:-3},
+  {side:'global', type:'eco', text:'ОПЕК+ экстренно собирается на фоне нефтяного кризиса',           df:{}, ds:0, oil:null, od:6},
+];
+
+function getEventsForTurn(){
+  // Always trigger one event from current player's side
+  // Plus one global or adjacent-side event
+  var myPool=ALL_EVENTS.filter(function(e){return e.side===side||e.side==='global';});
+  // Weight by fatigue: high fatigue = more political events
+  var myFatigue=fatigue[side]||20;
+  var weighted=[];
+  myPool.forEach(function(e){
+    var w=1;
+    if(myFatigue>60&&e.type==='pol') w=3;
+    else if(myFatigue>40&&e.type==='pol') w=2;
+    for(var i=0;i<w;i++) weighted.push(e);
+  });
+  // Also grab one event from a different faction for world picture
+  var otherSides=['usa','iran','israel','gulf'].filter(function(s){return s!==side;});
+  var otherSide=otherSides[Math.floor(Math.random()*otherSides.length)];
+  var otherPool=ALL_EVENTS.filter(function(e){return e.side===otherSide;});
+  var events=[weighted[Math.floor(Math.random()*weighted.length)]];
+  if(otherPool.length) events.push(otherPool[Math.floor(Math.random()*otherPool.length)]);
+  return events;
+}
+
+function applyEvent(ev){
+  // Apply fatigue deltas to each faction
+  if(ev.df) Object.keys(ev.df).forEach(function(f){
+    if(fatigue[f]!==undefined) fatigue[f]=Math.round(Math.max(0,Math.min(100,fatigue[f]+Math.min(3,Math.max(-3,ev.df[f])))));
+  });
+  if(ev.ds) support=Math.max(0,Math.min(100,support+ev.ds));
+  // Oil: prefer absolute if set, else delta; cap changes to ±8 per event for realism
+  if(ev.oil!==null&&ev.oil!==undefined){
+    oil=Math.max(60,Math.min(200,ev.oil));
+  } else if(ev.od){
+    oil=Math.max(60,Math.min(200,oil+ev.od));
+  }
+}
+
+function triggerEvents(){
+  // ── MISSILE REPLENISHMENT ──────────────────────────────────
+  ['usa','iran','israel','gulf'].forEach(function(f){
+    missiles[f] = Math.min(MISSILES_START[f]||0, (missiles[f]||0) + 5);
+  });
+
+  // ── OIL SHOCK → USA FATIGUE ──────────────────────────────
+  // High oil price hurts USA domestic support (gas prices, recession fears)
+  if(oil > 120){
+    var oilPenalty = oil > 150 ? 3 : 2;
+    fatigue.usa = Math.min(100, Math.round(fatigue.usa + oilPenalty));
+  }
+
+  // ── OBJECT HP RECOVERY (deescalation / repair) ────────────
+  // When tension is falling or low, damaged objects slowly repair (+10 HP/turn)
+  if(tension < 70){
+    MARKERS_DEF.forEach(function(m){
+      if(m.maxHp===null) return; // indestructible
+      var hp = getMarkerHp(m.id);
+      if(hp > 0 && hp < m.maxHp){
+        markerHp[m.id] = Math.min(m.maxHp, hp + 10);
+      }
+    });
+    if(typeof renderMapMarkers==='function') renderMapMarkers();
+  }
+  if(typeof tickPolCooldowns==='function') tickPolCooldowns();
+  var evs=getEventsForTurn();
+  evs.forEach(function(ev){
+    applyEvent(ev);
+    recentEvents.unshift({text:ev.text,type:ev.type,evside:ev.side});
+  });
+  if(recentEvents.length>8) recentEvents=recentEvents.slice(0,8);
+  renderEvents();
+  if(evs.length){
+    var last=evs[0];
+    var tmap={pol:'ПОЛИТ.',mil:'ВОЕН.',eco:'ЭКОН.',dip:'ДИПЛ.'};
+    var cmap={pol:'tb-pol',mil:'tb-mil',eco:'tb-eco',dip:'tb-dip'};
+    document.getElementById('ticker-text').textContent=last.text;
+    var b=document.getElementById('ticker-badge');
+    b.textContent=tmap[last.type]||'';b.className='ticker-badge '+(cmap[last.type]||'tb-pol');
+  }
+  // Note: updateMetrics() is NOT called here — called once at end of turn in doChoice
+}
+
+function renderEvents(){
+  var el=document.getElementById('events-list');if(!el)return;el.innerHTML='';
+  var tmap={pol:'ПОЛИТ',mil:'ВОЕН',eco:'ЭКОН',dip:'ДИПЛ'};
+  var smap={usa:'🇺🇸',iran:'🇮🇷',israel:'🇮🇱',gulf:'🇸🇦',global:'🌐'};
+  recentEvents.slice(0,8).forEach(function(ev){
+    var d=document.createElement('div');d.className='ev-item';
+    d.innerHTML='<span class="ev-type '+ev.type+'">'+(tmap[ev.type]||'')+'</span>'
+      +'<span style="margin-right:4px;font-size:10px">'+(smap[ev.evside]||'')+'</span>'
+      +'<span class="ev-text">'+ev.text+'</span>';
+    el.appendChild(d);
+  });
+}
+
+// ── KHAMENEI DEATH EVENT ──────────────────────────────────────
+function checkKhamenei(){
+  if(!khameneiAlive) return;
+  // Don't kill during deescalation — if tension is falling, he survives
+  if(tension < 35) return;
+  // Iran protecting him: if last player choice contained safety keywords, delay
+  var lastChoice=(hist.length>=2 ? hist[hist.length-2].content : '').toLowerCase();
+  var protected_=(lastChoice.indexOf('бункер')>=0||lastChoice.indexOf('безопасност')>=0||lastChoice.indexOf('эвакуир')>=0||lastChoice.indexOf('укрыт')>=0);
+  if(protected_) return;
+
+  // Probability rises each turn after turn 2
+  var prob = turn<=2 ? 0 : turn<=4 ? 0.55 : turn<=6 ? 0.75 : 0.88;
+  if(Math.random() < prob){
+    khameneiAlive=false;
+    addEntry('ЭКСТРЕННО / CENTCOM','Подтверждено: Верховный лидер Хаменеи уничтожен в бункере под Тегераном. Иранское командование дезориентировано. КСИР переходит на автономное управление.',null,false);
+    tension=Math.min(100,tension+12);
+    fatigue.iran=Math.max(0,fatigue.iran-8); // rally effect
+    oil=Math.min(200,oil+12);
+    updateMetrics();
+  }
+}
+
+// ── SYSTEM PROMPTS ────────────────────────────────────────────
+var SYS_BASE='Ты нарративный движок текстовой военной стратегии про войну США–Иран 2026. Пиши ТОЛЬКО на русском языке.\n\nКРИТИЧЕСКИ ВАЖНО: ответ — ТОЛЬКО валидный JSON, ни одного символа до { и после }. Никакого markdown.\n\nJSON структура:\n{"narrative":"2-3 предложения обстановки","opponent":"1-2 предложения противника","event":"1 новостная строка","choices":["действие 1","действие 2","действие 3"],"tags":["hot","neu","saf"],"delta":5,"fd":{"usa":0,"iran":2,"israel":0,"gulf":0},"md":{"usa":0,"iran":-5,"israel":0,"gulf":0},"missiles_used":20,"losses":{"attacker":50,"defender":200},"strikes":[{"id":"ab_teh","dmg":30}],"sd":-2,"od":4,"capture":[{"province":"ID_ПРОВИНЦИИ","by":"usa|iran|israel|gulf"}]}\n\nДОСТУПНЫЕ ПРОВИНЦИИ (id: описание):\n- khuzestan: Хузестан, юго-запад Ирана, 80% иранской нефти\n- tehran: Тегеранский регион, столица Ирана\n- khorasan: Хорасан, восток Ирана, граница с Афганистаном\n- fars: Фарс+Хормозган, юг Ирана, Персидский залив\n- aziran: Иранский Азербайджан, северо-запад Ирана\n- c_iran: Центральный Иран (Исфахан и др.)\n- w_iran: Западный Иран (Керманшах), граница с Ираком\n- kurdistan: Иракский Курдистан (Эрбиль, Сулеймания, Дохук)\n- ninawa: Нинева (Мосул), север Ирака\n- c_iraq: Центральный Ирак (Багдад, Анбар)\n- s_iraq: Южный Ирак (Басра), шиитский юг\n- e_saudi: Восточная провинция Саудии, нефть Абкайк\n- riyadh_z: Эр-Рияд, столица Саудии\n- hejaz: Хиджаз (Мекка, Медина)\n- asir: Асир/юг Саудии, граница с Йеменом\n- n_saudi: Северная Саудия, пустыня\n- n_yemen: Территория хуситов, весь западный и центральный Йемен\n- s_yemen: Южный Йемен, правительство в Адене\n- w_syria: Сирия (ХТС/Джулани), Дамаск и Алеппо\n- ne_syria: Северо-восток Сирии (курды СДС/Рожава)\n- n_leb: Северный Ливан, Бейрут\n- s_leb: Южный Ливан, зона Хезболлы\n- israel_n: Север Израиля, граница с Ливаном\n- israel_c: Центр Израиля (Тель-Авив, Иерусалим, Хайфа)\n- israel_s: Юг Израиля, граница с Газой, Негев\n- jordan_z: Иордания\n\nПРАВИЛО CAPTURE — СТРОГО:\n- capture ТОЛЬКО при реальном НАЗЕМНОМ вторжении с пехотой и бронетехникой\n- НЕЛЬЗЯ capture от: авиаудара, ракетного удара, дронов, кибератаки, блокады — это не захват территории\n- Иран НЕ МОЖЕТ захватить свои собственные провинции (khuzestan, tehran и др.)\n- capture только при tension>=70\n- Типичный захват: хуситы входят в asir пехотой, КСИР пересекает границу Ирака\n- Авиаудар по Абкайку — это od и md, но НЕ capture\n\nСТРУКТУРА ТРЁХ ВАРИАНТОВ — ОБЯЗАТЕЛЬНО:\nГенерируй ровно 3 варианта. Пиши их так, чтобы содержание СООТВЕТСТВОВАЛО слоту:\n[0] ЭСКАЛАЦИЯ (tags[0]="hot"): конкретный военный удар, атака, наступление, активация прокси\n[1] РАСЧЁТ (tags[1]="neu"): разведка, перегруппировка, санкции, оборона, переговоры с позиции силы\n[2] ДЕЭСКАЛАЦИЯ (tags[2]="saf"): прекращение огня, переговоры, дипломатическая инициатива, вывод войск\n\nПРАВИЛО: если вариант предлагает переговоры — он НЕ МОЖЕТ быть [0]. Если вариант предлагает удар — он НЕ МОЖЕТ быть [2].\ntags ВСЕГДА ["hot","neu","saf"] — строго в этом порядке.\n\nРАЗНООБРАЗИЕ — ОБЯЗАТЕЛЬНО:\nКаждый ход предлагай РАЗНЫЕ типы действий. Варианты [hot]: ракетный удар, авиаудар, кибератака, спецназ, активация прокси, блокада, удар по другому региону — чередуй.\nЗАПРЕЩЕНО повторять тип операции из предыдущего хода. Если прошлый [hot] был ракетным ударом — следующий должен быть другим типом.\nПривязывай варианты к текущей обстановке: захваченные зоны, потери, состояние сторон.\n\nПРАВИЛА ЦИФР:\n- delta: -6..+5. Деэскалация даёт отрицательный delta. Удары — положительный. Большинство ходов: delta 1-3, только экстремальная эскалация даёт 4-5\n- fd: объект с изменениями усталости для КАЖДОЙ стороны. Удар Израиля по Ирану: iran+=3, israel+=2. Большинство ходов: значения 1-2, максимум 4. Деэскалация: iran-=2, usa-=2. НЕ повышать усталость деэскалирующей стороны\n- sd: -6..+5. Дипломатия улучшает, эскалация ухудшает\n- od: нефть. СТРОГИЕ ЛИМИТЫ: обычный военный ход: 0..+3. Удар по нефтяной инфраструктуре (Абкайк, танкеры): +5..+10. Дипломатия/перемирие: -2..-5. Большинство ходов: od=0 или od=1. Нефть НЕ должна расти каждый ход — только при реальных нефтяных событиях\n- md: изменение боеспособности {usa,iran,israel,gulf}. Удары снижают боеспособность противника: -5..-20. Деэскалация: +1..+3 (медленное восстановление). При боеспособности <20 — сторона не может атаковать\n- missiles_used: сколько ракет/ударов израсходовано за этот ход (0 если нет ударов, 10-50 при hot-варианте)\n- losses: attacker/defender потери. США/Израиль авиаудар: attacker 0-3, defender 10-60. Иранский удар по базам: attacker 0-5, defender 5-30. Иран теряет в 3-5x больше. США/Израиль никогда >10 за ход. Иран никогда >120 за ход\n- strikes: массив конкретных объектов поражённых в этом ходу. Каждый элемент: {id, dmg}. dmg=0..100. Удар по аэродрому: dmg 20-50. По ядерному объекту: dmg 30-70. По радару: dmg 40-80. По авианосцу: dmg 10-30. НЕ указывай объекты которые не атаковались. Оставь [] если нет ударов. Используй только реальные id из списка объектов\n- Война длится реалистично — минимум 20 ходов (каждый ход = 8 часов = ~7 дней до развязки)\n- МАСШТАБ ХОДА = 8 ЧАСОВ: каждый вариант должен быть реализуем за 8ч. Авиаудар — да. Захват страны — нет. Наземная операция — только начало (плацдарм). Переговоры — только установление контакта. Если игрок написал нереализуемое — опиши в narrative что успели за 8ч, а choices предложи продолжение следующими шагами';
+var CONTEXTS={
+  usa:'СТОРОНА: США, советник Трампа. Операция «Эпическая ярость» началась 28 февраля 2026. Удары по 85 объектам. Иран ответил 680 ракетами. Израиль — союзник. Конгресс давит. Война идёт уже несколько дней, обе стороны несут потери. КСИР ещё боеспособен. Переговоры через Оман возможны. Цель: устранение ядерной угрозы без затяжной войны.',
+  iran:'СТОРОНА: Иран, командование КСИР. США и Израиль нанесли первый удар 28 февраля. Хаменеи в бункере. Ядерные объекты под угрозой. КСИР сохраняет 60% боеспособности. Хезболла активирована. Хуситы бьют по Красному морю. Народ в ярости — это актив. Цель: выжить, сохранить режим, максимизировать потери агрессора. КСИР — живуч и опасен, не слабак.',
+  israel:'СТОРОНА: Израиль, советник Нетаньяху. Операция «Рёв льва» — 200 самолётов, 500 целей. Ядерные объекты Ирана разрушены. Но Хезболла открыла фронт. ООН давит. Боеприпасы расходуются. Цель: сохранить военное превосходство без войны на два фронта.',
+  gulf:'СТОРОНА: Страны Залива (GCC), советник МБС. Война у порога. Хуситы активны. Ормуз под угрозой. США — союзник, Иран — сосед и угроза. Нефть растёт — это доход, но и нестабильность. Цель: сохранить нефтяную инфраструктуру и позицию регионального посредника.'
+};
+function getSys(s){
+  var ctx=CONTEXTS[s];
+  // Inject coalition pressure warnings into context
+  if(support<=30){
+    ctx+='\n\nКРИТИЧЕСКИ: поддержка союзников упала до '+support+'%. Союзники отказывают в базах, останавливают поставки, требуют переговоров. Это должно отражаться в нарративе и сужать агрессивные варианты.';
+  } else if(support<=50){
+    ctx+='\n\nПРЕДУПРЕЖДЕНИЕ: поддержка союзников '+support+'% — союзники колеблются и публично дистанцируются. Упомяни это в нарративе.';
+  }
+  if(fatigue[s]>=70){
+    ctx+='\n\nВНУТРЕННЕЕ ДАВЛЕНИЕ КРИТИЧЕСКОЕ ('+fatigue[s]+'%): общество требует объяснений. Политические издержки каждого агрессивного шага очень высоки. Отражай это в вариантах.';
+  }
+  if((military[s]||100)<40){
+    ctx+='\n\nВОЕННАЯ МОЩЬ КРИТИЧЕСКИ СНИЖЕНА ('+military[s]+'%): крупные наступательные операции невозможны. Выживание и оборона — приоритет. Вариант [0] должен быть оборонительным контрударом, не наступлением.';
+  }
+  if((missiles[s]||0)<50){
+    ctx+='\n\nЗАПАСЫ РАКЕТ КРИТИЧЕСКИ НИЗКИ ('+(missiles[s]||0)+' ед.): массированные удары невозможны. Вариант [0] должен предлагать точечные операции, не массированные.';
+  }
+  return SYS_BASE+'\n\n'+ctx;
+}
+
+// ── OPENINGS ──────────────────────────────────────────────────
+var OPENINGS={
+  usa:{n:'CENTCOM, 01:00 UTC, 28 февраля 2026. Первая волна «Эпической ярости» запущена: 180 крылатых ракет и ударные БПЛА на маршруте к 85 целям. Удары достигнут целей через ~40 минут. Израиль синхронно запустил операцию «Рёв льва» — 200 самолётов ВВС ЦАХАЛ пересекли границу. Иран ещё не знает полного масштаба. Нефть Brent — $72.4.',o:'АНБ перехватило: Тегеран фиксирует пуски с кораблей. Хаменеи переведён в защищённый бункер. Реакция КСИР — минуты.',c:['Расширить список целей первой волны — ударить по штабам КСИР в Тегеране прямо сейчас','Держаться плана: ядерные и военные объекты, избегать потерь среди мирного населения','Отправить последнее предупреждение через Оман — Иран ещё может остановить ответный удар'],t:['hot','neu','saf']},
+  iran:{n:'Штаб КСИР, 04:30 по Тегерану, 28 февраля 2026. Системы раннего предупреждения зафиксировали массовый пуск с американских кораблей — свыше 150 крылатых ракет. Одновременно: радары видят крупную группу израильских ВВС на подлёте. До первых ударов — 30-40 минут. Верховный лидер переведён в бункер. Нефть $72.4.',o:'Вашингтон хранит молчание. Тель-Авив отключил дипломатические линии. Время принять решение — сейчас.',c:['Немедленно рассредоточить ракетные установки и перевести КСИР в режим активного контрудара','Срочно вывезти Верховного лидера в защищённый бункер в горах Эльбурс — его безопасность приоритет','Запустить срочный дипломатический сигнал через Швейцарию: Иран готов к немедленным переговорам'],t:['hot','neu','saf']},
+  israel:{n:'ВВС ЦАХАЛ, 04:00 по Тель-Авиву, 28 февраля 2026. 200 самолётов — F-35I, F-15I, F-16I — на маршруте к 500 целям в Иране. Синхронизация с американской операцией подтверждена. Иранские ПВО обнаружат группу через ~15 минут. Хезболла на севере пока молчит — скоро не будет. Нефть $72.4.',o:'США подтвердили координацию. Белый дом публично хранит молчание для правдоподобного отрицания.',c:['Добавить командные бункеры КСИР в Тегеране в список целей первой волны — максимальный эффект','Строго держать план: ядерные и военные объекты, чтобы не дать повода для широкой войны','Выделить эскадрилью для превентивного удара по пусковым Хезболлы на юге Ливана'],t:['hot','neu','saf']},
+  gulf:{n:'Совет GCC, Эр-Рияд, 05:00 по местному, 28 февраля 2026. Вашингтон официально уведомил: операция «Эпическая ярость» началась. Первые удары достигнут Ирана через 20 минут. США запросили базу Дахран для дозаправки B-52. Нефть — $72.4, но фьючерсы уже $82. Иранский посол требует срочной встречи.',o:'Тегеран официально запросил позицию GCC. Хуситы в Йемене приведены в боевую готовность уровень 1.',c:['Немедленно предоставить базы США — ставим на победу Вашингтона и получаем гарантии безопасности','Публично заявить о нейтралитете, тайно помогать США разведкой — сохранить лицо перед Ираном','Предложить себя медиатором и созвать экстренный саммит ЛАГ для остановки конфликта'],t:['hot','neu','saf']}
+};
+
+// ── LABELS ────────────────────────────────────────────────────
+var SOURCES={usa:'ЦРУ / CENTCOM',iran:'РАЗВЕДКА КСИР',israel:'МОССАД / ЦАХАЛ',gulf:'РАЗВЕДКА GCC'};
+var PLABELS={usa:'СИТУАЦИОННАЯ КОМНАТА',iran:'ШТАБ КСИР',israel:'ШТАБ ЦАХАЛ',gulf:'СОВЕТ GCC'};
+
+// ── LOG HELPERS ───────────────────────────────────────────────
+function scrollLog(){var l=document.getElementById('log');l.scrollTop=l.scrollHeight;}
+function addEntry(srcLabel,mainText,oppText,isPlayer){
+  var d=document.createElement('div');d.className='log-entry';
+  var st=document.createElement('div');st.className='log-stamp';
+  var dot=document.createElement('div');dot.className='log-dot';
+  dot.style.background={usa:'var(--usa)',iran:'var(--iran)',israel:'var(--israel)',gulf:'var(--gulf)'}[side]||'var(--usa)';
+  st.appendChild(dot);
+  var stxt=document.createElement('span');stxt.textContent=fmt(turn)+' — '+srcLabel;st.appendChild(stxt);
+  d.appendChild(st);
+  var tx=document.createElement('span');tx.className='log-text'+(isPlayer?' player':'');tx.textContent=mainText;d.appendChild(tx);
+  if(oppText){var op=document.createElement('span');op.className='log-opp';op.textContent=oppText;d.appendChild(op);}
+  document.getElementById('log').appendChild(d);scrollLog();
+}
+function addThinking(){
+  var d=document.createElement('div');d.className='log-entry thinking-el';
+  d.innerHTML='<span class="log-thinking">⟳ ожидание разведданных...</span>';
+  document.getElementById('log').appendChild(d);scrollLog();
+}
+function removeThinking(){document.querySelectorAll('.thinking-el').forEach(function(e){e.remove();});}
+
+function renderChoices(ch,tags){
+  var box=document.getElementById('choices');box.innerHTML='';
+  var lmap={hot:'↑ ЭСКАЛАЦИЯ',neu:'→ РАСЧЁТ',saf:'↓ ДЕЭСКАЛАЦИЯ'};
+  (ch||[]).forEach(function(c,i){
+    var t=(tags&&tags[i])||'neu';
+    var btn=document.createElement('button');btn.className='cbtn '+t;
+    btn.innerHTML=c+'<span class="ctag">'+(lmap[t]||t)+'</span>';
+    btn.onclick=(function(cv){return function(){if(!busy)doChoice(cv);};})(c);
+    box.appendChild(btn);
+  });
+}
+function disableAll(){document.querySelectorAll('.cbtn').forEach(function(b){b.disabled=true;});var c=document.getElementById('custom-send');if(c)c.disabled=true;}
+function enableAll(){document.querySelectorAll('.cbtn').forEach(function(b){b.disabled=false;});var c=document.getElementById('custom-send');if(c)c.disabled=false;}
+
+// ── END CHECK ─────────────────────────────────────────────────
+function checkEnd(){
+  var day = Math.round(turn*8/24);
+
+  // ── CATASTROPHE (all sides) ──────────────────────────────────
+  if(tension>=100){
+    // Grace period: 3 turns at 100% to attempt de-escalation
+    if(!window._tensionMaxTurn) window._tensionMaxTurn = turn;
+    var turnsAt100 = turn - window._tensionMaxTurn;
+    if(turnsAt100 < 3){
+      updateCatastropheTimer(turnsAt100);
+    } else {
+      // 3 turns elapsed — catastrophe
+      window._tensionMaxTurn = undefined;
+      var m={
+        usa:'Ормуз заблокирован. Нефть $190. Война поглотила весь регион.\nПотери США — тысячи. Конгресс требует импичмента.',
+        iran:'Тегеран в руинах. КСИР уничтожен. Государство рухнуло.\nНарод заплатил за решения командования.',
+        israel:'Четыре фронта. Перехватчики кончились. Эвакуация Тель-Авива.\nСитуация вышла за пределы управления.',
+        gulf:'Абкайк горит. Ормуз закрыт. Мировая рецессия за 72 часа.\nМонархии Залива не пережили этой войны.'
+      };
+      showOutcome('РЕГИОНАЛЬНАЯ КАТАСТРОФА',(m[side]||m.usa)+'\n\n'+fmt(turn),false);return true;
+    }
+  } else {
+    // Tension dropped below 100 — reset counter
+    window._tensionMaxTurn = undefined;
+  }
+
+  // ── POLITICAL COLLAPSE (own fatigue) ────────────────────────
+  if(fatigue[side]>=95){
+    var m2={
+      usa:'Конгресс принял резолюцию о прекращении операции.\nТрамп проиграл политическую войну внутри страны.\nВойна закончилась без победы.',
+      iran:'Народное восстание. КСИР не стреляет в своих.\nРежим пал изнутри — не от бомб.',
+      israel:'Правительство Нетаньяху пало. Оппозиция требует мира.\nПолитический кризис поглотил военную победу.',
+      gulf:'GCC раскололся. Катар и Оман вышли.\nСаудовская Аравия объявила нейтралитет.'
+    };
+    showOutcome('ПОЛИТИЧЕСКИЙ КРАХ',(m2[side]||m2.usa)+'\n\n'+fmt(turn),false);return true;
+  }
+
+  // ── ISOLATION ────────────────────────────────────────────────
+  if(support<=5&&turn>=8){
+    showOutcome('ПОЛНАЯ ИЗОЛЯЦИЯ',
+      'Все союзники покинули коалицию.\nВы действуете в одиночку против всего региона.\nДипломатическое поражение — абсолютное.\n\n'+fmt(turn),false);return true;
+  }
+
+  // ── TERRITORY LOSS (Iran captures key Saudi/Israeli zones) ──
+  var tehranCaptured = PROVINCES.find(function(p){return p.id==='tehran' && p.ctrl && p.ctrl!=='iran';});
+  var abkaykCaptured = PROVINCES.find(function(p){return p.id==='e_saudi' && p.ctrl==='iran';});
+
+  // Military collapse
+  if((military[side]||100)<=5 && turn>=6){
+    var mc={
+      usa:'Вооружённые силы США понесли катастрофические потери.\nОперация приостановлена. Флот отходит.',
+      iran:'КСИР полностью уничтожен. Иранские вооружённые силы прекратили\nорганизованное сопротивление.',
+      israel:'ЦАХАЛ исчерпал ресурсы. Резервы закончились.\nИзраиль уязвим как никогда с 1948 года.',
+      gulf:'Силы GCC разгромлены. Саудовская армия отступила.'
+    };
+    showOutcome('ВОЕННЫЙ РАЗГРОМ',(mc[side]||mc.usa)+'\n\n'+fmt(turn),false);return true;
+  }
+  if(side==='gulf' && abkaykCaptured && turn>=8){
+    showOutcome('ЭКОНОМИЧЕСКАЯ КАТАСТРОФА',
+      'Восточная провинция захвачена. Абкайк в огне.\nSaudi Aramco остановила добычу. Нефть $180.\nЭкономика Залива рухнула.\n\n'+fmt(turn),false);return true;
+  }
+  if(side==='iran' && tehranCaptured && turn>=8){
+    showOutcome('СТОЛИЦА ПАЛА',
+      'Тегеран под контролем противника. Правительство бежало.\nИранское государство де-факто прекратило существование.\n\n'+fmt(turn),false);return true;
+  }
+
+  // ── VICTORIES ────────────────────────────────────────────────
+
+  // USA: nuclear threat eliminated (Iran exhausted OR ceasefire)
+  if(side==='usa'){
+    if(fatigue.iran>=90 && turn>=10){
+      showOutcome('США: ИРАН КАПИТУЛИРУЕТ',
+        'Народные волнения парализовали КСИР изнутри.\nНовое руководство Ирана запросило прекращение огня.\nЯдерная программа заморожена на 15 лет.\nТрамп называет это «величайшей победой».\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+    if(tension<=15&&turn>=15){
+      showOutcome('США: СТРАТЕГИЧЕСКАЯ ПОБЕДА',
+        'Переговоры через Оман завершились успехом.\nИран согласился на мораторий ядерной программы.\nЯдерная угроза устранена без затяжной войны.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+  }
+
+  // Iran: survived, USA withdrawn
+  if(side==='iran'){
+    if(fatigue.usa>=90 && turn>=10){
+      showOutcome('ИРАН: СТРАТЕГИЧЕСКАЯ ПОБЕДА',
+        'Антивоенное движение в США достигло критической массы.\nКонгресс проголосовал за вывод войск.\nИран выстоял — режим уцелел. КСИР победил.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+    if(tension<=15&&turn>=15){
+      showOutcome('ИРАН: ПЕРЕМИРИЕ',
+        'При посредничестве ООН достигнуто перемирие.\nЯдерные объекты частично восстановлены.\nИран выжил — и это само по себе победа.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+  }
+
+  // Israel: Hezbollah neutralized + Iran exhausted
+  if(side==='israel'){
+    if(fatigue.iran>=90 && turn>=10){
+      showOutcome('ИЗРАИЛЬ: УГРОЗА УСТРАНЕНА',
+        'КСИР истощён изнутри. Хезболла потеряла поддержку Тегерана.\nЯдерная программа заморожена. Северный фронт закрыт.\nОперация «Рёв льва» войдёт в учебники.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+    if(tension<=15&&turn>=15){
+      showOutcome('ИЗРАИЛЬ: СТАБИЛИЗАЦИЯ',
+        'Ядерная угроза устранена на поколение.\nЛиванский фронт заморожен при посредничестве США.\nИзраиль усилил стратегическое положение в регионе.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+  }
+
+  // GCC: Hormuz open, stability restored — LOWER threshold, earlier win possible
+  if(side==='gulf'){
+    if(fatigue.iran>=90 && turn>=10){
+      showOutcome('GCC: КРИЗИС УРЕГУЛИРОВАН',
+        'Истощённый Иран принял катарское предложение о медиации.\nОрмуз открыт. Страны Залива укрепили позиции.\nНефть стабилизировалась на $85.\n\n'+fmt(turn)+' / День '+day,true);return true;
+    }
+    // GCC wins by achieving stability — even at low tension, earlier than others
+    if(tension<=20&&turn>=10){
+      showOutcome('GCC: АРХИТЕКТОР МИРА',
+        'Страны Залива выступили ключевыми посредниками урегулирования.\nОрмуз открыт. Нефть вернулась к $80.\nАвторитет GCC в регионе небывало вырос.\nМир достигнут на '+day+'-й день конфликта.\n\n'+fmt(turn),true);return true;
+    }
+  }
+
+  // ── DIPLOMATIC VICTORY ──────────────────────────────────────
+  // If 3+ key regional actors become full allies → diplomatic resolution
+  var KEY_ACTORS = ['turkey','iraq','jordan','egypt','qatar','uae','bahrain'];
+  var alliedCount = KEY_ACTORS.filter(function(k){ return getDiplInf(k)>=90; }).length;
+  if(alliedCount >= 4 && turn >= 8){
+    var dipWins = {
+      usa:'Трёхсторонние гарантии безопасности сформированы.\nРегиональная коалиция изолировала Иран дипломатически.\nЯдерные инспекции возобновлены по соглашению.',
+      iran:'Иран успешно расколол региональную коалицию.\nКлючевые игроки отказались поддерживать санкции.\nПереговоры начались на иранских условиях.',
+      israel:'Нормализация с ключевыми арабскими странами завершена.\nХезболла изолирована дипломатически.\nСеверная граница стабилизирована без войны.',
+      gulf:'GCC построил непробиваемую региональную архитектуру.\nИран согласился на «Диалог безопасности Залива».\nНефтяные доходы защищены.'
+    };
+    showOutcome('ДИПЛОМАТИЧЕСКАЯ ПОБЕДА', (dipWins[side]||dipWins.usa)+'\n\n'+fmt(turn)+' / День '+day, true);
+    return true;
+  }
+
+  return false;
+}
+function showOutcome(title,body,win){
+  document.getElementById('game-area').style.display='none';
+  var o=document.getElementById('outcome');o.className='show';
+  var t=document.getElementById('ot-title');t.textContent=title;t.style.color=win?'#22c55e':'#ef4444';
+  document.getElementById('ot-body').textContent=body;
+}
+
+// ── JSON EXTRACTOR ────────────────────────────────────────────
+function extractJSON(raw){
+  var s=raw.replace(/```[\w]*\n?/g,'').replace(/```/g,'').trim();
+  try{return JSON.parse(s);}catch(e1){}
+  var a=s.indexOf('{'),b=s.lastIndexOf('}');
+  if(a!==-1&&b>a){
+    var sub=s.slice(a,b+1);
+    try{return JSON.parse(sub);}catch(e2){}
+    try{return JSON.parse(sub.replace(/,\s*([}\]])/g,'$1'));}catch(e3){}
+  }
+  var m=s.match(/\{[^{}]*"narrative"[^{}]*"choices"[\s\S]*?\}/);
+  if(m){try{return JSON.parse(m[0]);}catch(e4){}}
+  throw new Error('JSON не найден: '+s.slice(0,100));
+}
+
+// ── MAIN GAME LOOP ────────────────────────────────────────────
+async function doChoice(choice){
+  if(busy)return;
+  busy=true;disableAll();
+  turn++;updateClock(turn);
+  addEntry(PLABELS[side],choice,'',true);
+  addThinking();
+
+  // Khamenei check happens before API call (contextual)
+  checkKhamenei();
+
+  // Track Iran protection of Khamenei
+  if(side==='iran' && khameneiAlive){
+    var cl=choice.toLowerCase();
+    if(cl.indexOf('бункер')>=0||cl.indexOf('безопасност')>=0||cl.indexOf('эвакуир')>=0||cl.indexOf('укрыт')>=0){
+      khameneiAlive=true; // explicitly preserved this turn
+    }
+  }
+
+  for(var attempt=1;attempt<=3;attempt++){
+    try{
+      // Build rich context for AI — include recent events, territory and military state
+      var capturedZones = PROVINCES.filter(function(p){return p.ctrl&&p.ctrl!==null;})
+        .map(function(p){return p.name+'('+p.ctrl+')'}).join(', ');
+      var recentNews = recentEvents.slice(0,3).map(function(e){return e.text;}).join(' | ');
+      var missilesLeft = missiles[side]||0;
+      // Summarise destroyed objects for AI context
+      var destroyedObjs = MARKERS_DEF.filter(function(m){ return m.maxHp!==null && getMarkerHp(m.id)<=0; }).map(function(m){ return m.label+'('+m.side+')'; }).join(', ');
+      // Live objects by side for AI to target in strikes
+      var liveObjsBySide = {};
+      ['usa','iran','israel','gulf'].forEach(function(s2){
+        liveObjsBySide[s2] = MARKERS_DEF.filter(function(m){ return m.side===s2 && m.maxHp!==null && getMarkerHp(m.id)>0; }).map(function(m){ return m.id+'='+m.label+'['+getMarkerHp(m.id)+'%]'; }).join(', ');
+      });
+      var stateMsg='Ход '+turn+' (день '+(Math.round(turn*8/24))+'). '
+        +'Напряжённость='+tension
+        +', усталость='+JSON.stringify(fatigue)
+        +', боеспособность='+JSON.stringify(military)
+        +', ракеты_'+side+'='+missilesLeft
+        +', поддержка='+support
+        +', нефть=$'+Math.round(oil)
+        +(khameneiAlive?', Хаменеи жив':', Хаменеи мёртв')
+        +(capturedZones?'. Захвачено: '+capturedZones:'')
+        +(recentNews?'. События: '+recentNews:'')
+        +(destroyedObjs?'. Уничтожены: '+destroyedObjs:'')
+        +'. Живые объекты для strikes — используй только эти id: Иран='+liveObjsBySide.iran+'; США='+liveObjsBySide.usa+'; Израиль='+liveObjsBySide.israel+'; GCC='+liveObjsBySide.gulf
+        +'. Ответь ТОЛЬКО JSON.';
+
+      var resp=await fetch(API_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:API_MODEL, max_tokens:2200,
+          system:getSys(side),
+          messages:hist.slice(-6).concat([{role:'user',content:'Действие: "'+choice+'". '+stateMsg}])
+        })
+      });
+      if(!resp.ok){var ed=await resp.json().catch(function(){return{};});throw new Error('HTTP '+resp.status+(ed&&ed.error?' — '+ed.error.message:''));}
+      var data=await resp.json();
+      var raw='';
+      if(data&&data.content)data.content.forEach(function(b){if(b.type==='text')raw+=b.text;});
+      if(!raw)throw new Error('пустой ответ');
+      var p=extractJSON(raw);
+      if(!p.narrative||!p.choices||!p.choices.length)throw new Error('неполный JSON');
+
+      removeThinking();
+
+      // ── Apply ALL deltas together at end of turn ──
+      // 1. AI-generated narrative deltas
+      var dCap=Math.min(5,Math.max(-6,p.delta||0));
+      tension=Math.max(0,Math.min(100,tension+dCap));
+
+      if(p.fd && typeof p.fd==='object'){
+        ['usa','iran','israel','gulf'].forEach(function(f){
+          if(p.fd[f]!==undefined){
+            fatigue[f]=Math.round(Math.max(0,Math.min(100,fatigue[f]+Math.min(4,Math.max(-4,p.fd[f])))));
+          }
+        });
+      } else if(p.fd && typeof p.fd==='number'){
+        fatigue[side]=Math.round(Math.max(0,Math.min(100,fatigue[side]+Math.min(4,Math.max(-4,p.fd)))));
+      }
+
+      support=Math.max(0,Math.min(100,support+Math.min(5,Math.max(-6,p.sd||0))));
+
+      // Oil: tight cap — only explicit oil events (Hormuz, Abkaik) should move it significantly
+      oil=Math.max(60,Math.min(200,oil+Math.min(4,Math.max(-4,p.od||0))));
+
+      // ── MILITARY / COMBAT SYSTEM ────────────────────────────
+      // Apply military strength changes
+      if(p.md && typeof p.md==='object'){
+        ['usa','iran','israel','gulf'].forEach(function(f){
+          if(p.md[f]!==undefined){
+            military[f]=Math.max(0,Math.min(100,military[f]+Math.min(5,Math.max(-20,p.md[f]))));
+          }
+        });
+      }
+      // Process specific object strikes
+      if(typeof processStrikes==='function') processStrikes(p.strikes);
+      // Deduct missiles used
+      var msUsed=Math.min(missiles[side]||0, Math.max(0,p.missiles_used||0));
+      if(msUsed>0) missiles[side]=Math.max(0,(missiles[side]||0)-msUsed);
+      // Record and display losses
+      if(p.losses && typeof p.losses==='object'){
+        var atk=Math.max(0,p.losses.attacker||0);
+        var def=Math.max(0,p.losses.defender||0);
+
+        // Attacker = current player side
+        if(atk>0) losses[side]=(losses[side]||0)+atk;
+
+        // Defender = primary enemy faction
+        var enemyMap={usa:'iran', iran:'usa', israel:'iran', gulf:'iran'};
+        var enemy=enemyMap[side]||'iran';
+
+        // Hard client caps — AI often ignores prompt limits
+        // USA/Israel: max 10 attacker losses per turn (precision warfare)
+        // Iran/Gulf as defender: max 120 per turn
+        var atkCap=(side==='usa'||side==='israel')?10:40;
+        var defCap=(enemy==='iran'||enemy==='gulf')?120:60;
+        atk=Math.min(atk,atkCap);
+        def=Math.min(def,defCap);
+        if(def>0) losses[enemy]=(losses[enemy]||0)+def;
+
+        // ── FATIGUE FROM LOSSES ──────────────────────────────
+        // Coefficients: fatigue points per 10 losses
+        // USA very sensitive, GCC moderately, Israel/Iran equal
+        var fatPerTen={usa:1.2, gulf:0.9, israel:0.5, iran:0.5};
+        if(atk>0) fatigue[side]=Math.max(0,Math.min(100,Math.round(fatigue[side]+(atk/10)*(fatPerTen[side]||0.5))));
+        if(def>0) fatigue[enemy]=Math.max(0,Math.min(100,Math.round(fatigue[enemy]+(def/10)*(fatPerTen[enemy]||0.5))));
+
+        var lossEntry='';
+        if(atk>0||def>0){
+          var sideNames={usa:'🇺🇸 США',iran:'🇮🇷 Иран',israel:'🇮🇱 Израиль',gulf:'🇸🇦 GCC'};
+          lossEntry='⚔ Потери: '
+            +(atk>0?sideNames[side]+' ~'+atk:'')
+            +(atk>0&&def>0?'  /  ':'')
+            +(def>0?sideNames[enemy]+' ~'+def:'');
+          if(!p.md){
+            if(atk>0) military[side]=Math.max(0,military[side]-Math.round(atk/50));
+            if(def>0) military[enemy]=Math.max(0,military[enemy]-Math.round(def/80));
+          }
+        }
+        if(lossEntry) addEntry('БОЕВЫЕ СВОДКИ',lossEntry,null,false);
+      }
+      // Warn if missiles critically low
+      if((missiles[side]||0)<30 && (missiles[side]||0)>0){
+        addEntry('ШТАБ','⚠ Ракетные запасы критически низки: '+(missiles[side]||0)+' ед. Массированные удары невозможны.',null,false);
+      }
+
+      // 2. World events (AFTER narrative — single update at end)
+      triggerEvents();
+
+      // Single metrics update after everything is applied
+      updateMetrics();
+
+      // Check end conditions AFTER events (events can push tension/fatigue over threshold)
+      if(checkEnd()) return;
+
+      // AI-generated event field → add to news
+      if(p.event && p.event.length>5){
+        var aiEv={text:p.event, type:'mil', evside:'global'};
+        if(/протест|народ|митинг|рейтинг|конгресс|парламент/i.test(p.event)) aiEv.type='pol';
+        else if(/нефть|доллар|рынок|экономика|санкц/i.test(p.event)) aiEv.type='eco';
+        else if(/перегов|дипломат|посол|медиат|мирн/i.test(p.event)) aiEv.type='dip';
+        recentEvents.unshift(aiEv);
+        if(recentEvents.length>8) recentEvents=recentEvents.slice(0,8);
+        renderEvents();
+      }
+
+      // Tags: ALWAYS hot/neu/saf by position — this is the contract with AI
+      // Client enforces the order, prompt enforces the content matching
+      var tags = ['hot','neu','saf'];
+      if((p.choices||[]).length !== 3){
+        // Non-standard number of choices — infer tags from text
+        tags = (p.choices||[]).map(function(txt){
+          var t = txt.toLowerCase();
+          if(/удар|атак|бомб|ракет|уничтож|наступл|эскал|штурм/.test(t)) return 'hot';
+          if(/перемир|прекрат|вывод|переговор|деэскал|медиац|мир/.test(t)) return 'saf';
+          return 'neu';
+        });
+      }
+
+      addEntry(SOURCES[side],p.narrative,p.opponent||'',false);
+      // Process any territory captures in AI response
+      if(typeof processProvinceCaptures==='function') processProvinceCaptures(p);
+      hist.push({role:'user',content:'Действие: "'+choice+'"'});
+      hist.push({role:'assistant',content:raw});
+      savedChoices=p.choices; savedTags=tags;
+      if(!checkEnd()){renderChoices(savedChoices,savedTags);enableAll();}
+      busy=false;return;
+
+    }catch(err){
+      if(attempt<3){
+        document.querySelectorAll('.thinking-el .log-thinking').forEach(function(el){el.textContent='⟳ помехи, повтор '+attempt+'/3 ('+err.message+')';});
+        await new Promise(function(r){setTimeout(r,2000);});
+      }else{
+        removeThinking();
+        addEntry('СИСТЕМА','[СБОЙ: '+err.message+'] Повторите приказ.','',false);
+        turn--;updateClock(turn);
+        if(savedChoices.length)renderChoices(savedChoices,savedTags);
+        enableAll();busy=false;
+      }
+    }
+  }
+}
+
+function sendCustom(){var inp=document.getElementById('custom-inp');var v=(inp.value||'').trim();if(!v||busy)return;inp.value='';doChoice(v);}
+document.addEventListener('keydown',function(e){var ci=document.getElementById('custom-inp');if(ci&&e.target===ci&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustom();}});
+
+function chooseSide(s){
+  side=s;tension=40;support=65;oil=72.4;turn=0;busy=false;hist=[];savedChoices=[];savedTags=[];recentEvents=[];
+  fatigue={usa:20,iran:30,israel:15,gulf:10};
+  military={usa:100,iran:65,israel:90,gulf:70};
+  missiles={usa:400,iran:180,israel:300,gulf:80};
+  losses={usa:0,iran:0,israel:0,gulf:0};
+  polCooldowns={};
+  if(typeof initMarkerHp==='function') initMarkerHp();
+  window._tensionMaxTurn = undefined;
+  khameneiAlive=true;
+  // Show game area FIRST so DOM elements exist before we call switchTab/renderDiplomacy
+  document.getElementById('side-screen').style.display='none';
+  document.getElementById('outcome').className='';
+  var ga=document.getElementById('game-area');ga.style.display='flex';
+  document.getElementById('log').innerHTML='';
+  document.getElementById('choices').innerHTML='';
+  document.getElementById('events-list').innerHTML='';
+  var bdiv=document.getElementById('side-badge-display');bdiv.innerHTML='';
+  var b=document.createElement('div');
+  b.className='side-badge '+s+' active';
+  b.textContent={usa:'🇺🇸 США / ТРАМП',iran:'🇮🇷 ИРАН / КСИР',israel:'🇮🇱 ИЗРАИЛЬ / ЦАХАЛ',gulf:'🇸🇦 СТРАНЫ ЗАЛИВА / GCC'}[s];
+  bdiv.appendChild(b);
+  switchTab('mil');
+  if(typeof resetDiplomacy==='function') resetDiplomacy();
+  updateClock(0);updateMetrics();
+  var op=OPENINGS[s];savedChoices=op.c;savedTags=op.t;
+  addEntry(SOURCES[s],op.n,op.o,false);
+  renderChoices(op.c,op.t);
+  triggerEvents();
+}
+function showSideSelect(){
+  document.getElementById('outcome').className='';
+  document.getElementById('game-area').style.display='none';
+  document.getElementById('side-screen').style.display='flex';
+  document.getElementById('side-badge-display').innerHTML='';
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(t){
+  ['mil','dip','war','pol'].forEach(function(id){
+    var p=document.getElementById('pane-'+id);
+    var b=document.getElementById('tab-'+id);
+    if(p) p.style.display=t===id?'flex':'none';
+    if(b) b.className='tab-btn'+(t===id?' active':'');
+  });
+  if(t==='dip') renderDiplomacy();
+  if(t==='war') renderWarPanel();
+  if(t==='pol'){ updateMetrics(); renderPolPanel(); }
+}
+
+// ── WAR PANEL ─────────────────────────────────────────────────
+var WAR_FACTIONS=[
+  {key:'usa',   flag:'🇺🇸', name:'США',      milColor:'#3b82f6', milGrad:'#60a5fa'},
+  {key:'iran',  flag:'🇮🇷', name:'ИРАН',     milColor:'#22c55e', milGrad:'#4ade80'},
+  {key:'israel',flag:'🇮🇱', name:'ИЗРАИЛЬ',  milColor:'#eab308', milGrad:'#fbbf24'},
+  {key:'gulf',  flag:'🇸🇦', name:'GCC',      milColor:'#f97316', milGrad:'#fb923c'},
+];
+
+function getMilStatus(v){
+  if(v>=80) return {label:'БОЕСПОСОБНЫ',   color:'#22c55e'};
+  if(v>=55) return {label:'ПОТЕРИ',        color:'#eab308'};
+  if(v>=30) return {label:'ОСЛАБЛЕНЫ',     color:'#f97316'};
+  return            {label:'КРИТИЧЕСКИ',   color:'#ef4444'};
+}
+
+function renderWarPanel(){
+  var el=document.getElementById('war-list'); if(!el) return;
+  el.innerHTML='';
+
+  // Total losses banner
+  var totalLoss = Object.values(losses).reduce(function(a,b){return a+b;},0);
+  if(totalLoss>0){
+    var banner=document.createElement('div');
+    banner.style.cssText='background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:5px;padding:7px 10px;margin-bottom:8px;font-size:9px;color:#ef4444;letter-spacing:1px;text-align:center';
+    banner.textContent='⚔ СУММАРНЫЕ ПОТЕРИ: ~'+totalLoss.toLocaleString()+' чел./ед. техники';
+    el.appendChild(banner);
+  }
+
+  // Per-faction military blocks — styled like diplomacy cards
+  WAR_FACTIONS.forEach(function(fac){
+    var milVal = military[fac.key]||0;
+    var msVal  = missiles[fac.key]||0;
+    var msMax  = MISSILES_START[fac.key]||1;
+    var msPct  = Math.round(msVal/msMax*100);
+    var lossVal= losses[fac.key]||0;
+    var st     = getMilStatus(milVal);
+    var isSelf = fac.key===side;
+
+    var d=document.createElement('div');
+    d.className='dipl-country';
+    if(isSelf) d.style.borderColor='rgba(255,255,255,0.12)';
+
+    d.innerHTML=
+      '<div class="dipl-head">'
+        +'<span style="font-size:14px">'+fac.flag+'</span>'
+        +'<span class="dipl-name">'+fac.name+(isSelf?' <span style="font-size:8px;color:var(--accent)">[ВЫ]</span>':'')+'</span>'
+        +'<span class="dipl-status" style="color:'+st.color+';border-color:'+st.color+'40;background:'+st.color+'0d">'+st.label+'</span>'
+      +'</div>'
+
+      // Military strength bar
+      +'<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:3px">БОЕСПОСОБНОСТЬ</div>'
+      +'<div class="dipl-bar-row">'
+        +'<div class="dipl-bar"><div class="dipl-bar-fill" style="width:'+milVal+'%;background:linear-gradient(90deg,'+fac.milColor+','+fac.milGrad+')"></div></div>'
+        +'<span class="dipl-val" style="color:'+fac.milGrad+'">'+milVal+'%</span>'
+      +'</div>'
+
+      // Missiles bar
+      +'<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;margin-top:5px">УДАРНЫЙ ПОТЕНЦИАЛ</div>'
+      +'<div class="dipl-bar-row">'
+        +'<div class="dipl-bar"><div class="dipl-bar-fill" style="width:'+msPct+'%;background:linear-gradient(90deg,#f97316,#fb923c)"></div></div>'
+        +'<span class="dipl-val" style="color:'+(msPct>60?'#4ade80':msPct>25?'#fbbf24':'#ef4444')+'">'+msVal+'</span>'
+      +'</div>'
+
+      // Losses
+      +(lossVal>0
+        ?'<div style="font-size:9px;color:#ef4444;margin-top:5px;letter-spacing:0.5px">⚔ Потери: ~'+lossVal.toLocaleString()+' чел./ед.</div>'
+        :'<div style="font-size:9px;color:var(--text3);margin-top:5px">Потери не зафиксированы</div>');
+
+    el.appendChild(d);
+  });
+}
+
+// ── DIPLOMACY SYSTEM ──────────────────────────────────────────
+// ── DIPLOMACY — per-side influence ────────────────────────────
+// inf: starting influence per playing side {usa, iran, israel, gulf}
+var DIPL_COUNTRIES={
+  turkey:   {flag:'🇹🇷',name:'ТУРЦИЯ',
+    inf:{usa:55,iran:45,israel:30,gulf:50},
+    desc:'НАТО, Босфор. Торговые связи с Ираном.',
+    actions:{usa:'Предложить усиление НАТО и снять санкции с экспорта',iran:'Газовые контракты и общие интересы против курдов',israel:'Разведданные по Хезболле в обмен на нейтралитет',gulf:'Инвестиции в инфраструктуру'},
+    bonus:{usa:'Закрытие Босфора для РФ',iran:'Наземный коридор на север',israel:'Разведка Хезболлы',gulf:'Блокада иранского экспорта'}},
+  iraq:     {flag:'🇮🇶',name:'ИРАК',
+    inf:{usa:40,iran:60,israel:25,gulf:45},
+    desc:'Балансирует между США и Ираном. Ополчения активны.',
+    actions:{usa:'Поддержать правительство, экономический пакет',iran:'Активировать ополчения, предложить защиту',israel:'Разведка против КСИР в Ираке',gulf:'Инвестиции в обмен на нейтралитет'},
+    bonus:{usa:'Базы в Ираке +эффект',iran:'Удары по базам США с иракской территории',israel:'Перехват иранских поставок',gulf:'Северный буфер'}},
+  kurdistan:{flag:'🏳',name:'КУРДИСТАН',
+    inf:{usa:70,iran:15,israel:75,gulf:55},
+    desc:'Де-факто независимый регион Ирака. Враждебен Ирану и Турции.',
+    actions:{usa:'Расширить сотрудничество с Пешмергой и разместить базы',iran:'Предложить автономию в обмен на нейтралитет',israel:'Углубить тайное сотрудничество Моссад-Пешмерга',gulf:'Финансировать развитие в обмен на нейтралитет'},
+    bonus:{usa:'Базы у границы Ирана — удары +эффект',iran:'Нейтрализация курдского давления на севере',israel:'Разведка у иранской границы',gulf:'Стабильный северный коридор'}},
+  syria:    {flag:'🏴',name:'СИРИЯ (ХТС)',
+    inf:{usa:45,iran:15,israel:35,gulf:50},
+    desc:'После падения Асада (дек. 2024) — правительство ХТС под Джулани. Ориентируется на Залив и Запад.',
+    actions:{usa:'Предложить снятие санкций и экономическую помощь для восстановления',iran:'Предложить сохранение баз и транзит в обмен на нейтралитет',israel:'Предложить гарантии безопасности и невмешательство',gulf:'Предложить масштабные инвестиции в восстановление страны'},
+    bonus:{usa:'Сирия закрыта для Ирана — коридор к Хезболле перекрыт',iran:'Ограниченный транзит через сирийскую территорию',israel:'Демилитаризованная буферная зона на севере',gulf:'Сирия — новый рынок и союзник в регионе'}},
+  jordan:   {flag:'🇯🇴',name:'ИОРДАНИЯ',
+    inf:{usa:70,iran:25,israel:65,gulf:60},
+    desc:'Союзник Запада. Закрыла небо для Ирана в 2024.',
+    actions:{usa:'Укрепить присутствие, помощь $1.5 млрд',iran:'Апеллировать к арабской солидарности',israel:'Расширить совместную ПВО',gulf:'Экономическая интеграция'},
+    bonus:{usa:'Воздушный коридор и базы',iran:'Нейтрализация иорданской ПВО',israel:'Совместный перехват +20%',gulf:'Транзитный коридор'}},
+  egypt:    {flag:'🇪🇬',name:'ЕГИПЕТ',
+    inf:{usa:55,iran:30,israel:50,gulf:60},
+    desc:'Крупнейшая арабская армия. Контролирует Суэцкий канал.',
+    actions:{usa:'Военная помощь и совместные учения',iran:'Апеллировать к антиизраильским настроениям',israel:'Попросить закрыть Суэц для Ирана',gulf:'Координация у Красного моря'},
+    bonus:{usa:'Суэц открыт для ВМС США',iran:'Суэц закрыт для США',israel:'Закрытие Суэца для Ирана',gulf:'Блокада хуситов'}},
+  pakistan: {flag:'🇵🇰',name:'ПАКИСТАН',
+    inf:{usa:40,iran:55,israel:20,gulf:50},
+    desc:'Ядерная держава. Исторические связи с Ираном.',
+    actions:{usa:'Военная помощь, снятие санкций',iran:'Исламская солидарность, коридор к Заливу',israel:'Давить через США',gulf:'Финансовая помощь и нефть'},
+    bonus:{usa:'Закрытие восточной границы Ирана',iran:'Безопасный коридор на восток',israel:'Нейтрализация угрозы с востока',gulf:'Финансовый союзник'}},
+  lebanon:  {flag:'🇱🇧',name:'ЛИВАН',
+    inf:{usa:45,iran:60,israel:20,gulf:40},
+    desc:'Слабое государство. Хезболла доминирует на юге.',
+    actions:{usa:'Поддержать правительство против Хезболлы',iran:'Укрепить Хезболлу через Бейрут',israel:'Потребовать разоружения под угрозой операции',gulf:'Финансирование за сдерживание Хезболлы'},
+    bonus:{usa:'Ливан ограничивает Хезболлу',iran:'Хезболла получает легитимность',israel:'Ослабление Хезболлы без войны',gulf:'Снижение угрозы с севера'}},
+  qatar:    {flag:'🇶🇦',name:'КАТАР',
+    inf:{usa:70,iran:55,israel:55,gulf:65},
+    desc:'Принимает CENTCOM. Исторически посредник с Ираном.',
+    actions:{usa:'Укрепить базы, долгосрочный договор',iran:'Использовать как канал переговоров с США',israel:'Давление на ХАМАС через Катар',gulf:'Координация в рамках GCC'},
+    bonus:{usa:'CENTCOM усилен, операции +эффект',iran:'Секретный канал к США',israel:'Давление на ХАМАС',gulf:'GCC единый фронт'}},
+  uae:      {flag:'🇦🇪',name:'ОАЭ',
+    inf:{usa:75,iran:35,israel:70,gulf:80},
+    desc:'Де-факто союзник США. Нормализовал отношения с Израилем.',
+    actions:{usa:'Расширить базы и военное сотрудничество',iran:'Нейтралитет и восстановление торговли',israel:'Соглашения Авраама — совместные операции',gulf:'Лидерство GCC'},
+    bonus:{usa:'База Аль-Дафра усилена',iran:'ОАЭ нейтральны, торговля открыта',israel:'Нормализация и обмен разведкой',gulf:'ОАЭ — лидер коалиции'}},
+  bahrain:  {flag:'🇧🇭',name:'БАХРЕЙН',
+    inf:{usa:75,iran:25,israel:60,gulf:75},
+    desc:'5-й флот США. Суннитская монархия, шиитское большинство.',
+    actions:{usa:'Укрепить 5-й флот, военная помощь',iran:'Апеллировать к шиитскому большинству',israel:'Нормализация отношений',gulf:'Координация GCC'},
+    bonus:{usa:'5-й флот доминирует в Заливе',iran:'Внутренние волнения в Бахрейне',israel:'Нормализация и разведка',gulf:'Флот под единым командованием'}},
+  hezbollah:{flag:'🟢',name:'ХЕЗБОЛЛА',
+    inf:{usa:5,iran:100,israel:5,gulf:10},
+    desc:'Ливанская шиитская организация. Союзник Ирана.',
+    actions:{usa:'Изолировать дипломатически через Ливан',iran:'Координировать удары по Израилю и базам США',israel:'Прекращение огня в обмен на разоружение',gulf:'Давление через Лигу арабских государств'},
+    bonus:{usa:'Хезболла деактивирована — северный фронт закрыт',iran:'Северный фронт Израиля открыт',israel:'Северная граница стабилизирована',gulf:'Угроза Заливу снижена'}},
+  houthis:  {flag:'🔴',name:'ХУСИТЫ',
+    inf:{usa:5,iran:100,israel:5,gulf:10},
+    desc:'Йеменское движение. Красное море под контролем.',
+    actions:{usa:'Удары по инфраструктуре в Йемене',iran:'Координировать атаки на танкеры и базы',israel:'Уничтожить ракетные позиции на юге',gulf:'Совместная Saudi+UAE операция в Йемене'},
+    bonus:{usa:'Красное море открыто, нефть -$10',iran:'Красное море заблокировано, нефть +$15',israel:'Угроза с юга устранена',gulf:'Контроль над Красным морем'}}
+};
+
+// Per-side influence state (mutable, reset per game)
+var diplInfluence={};
+var diplHist=[];
+
+function getDiplInf(key){ return diplInfluence[key]!==undefined ? diplInfluence[key] : ((DIPL_COUNTRIES[key].inf[side])||50); }
+function setDiplInf(key,v){ diplInfluence[key]=Math.max(0,Math.min(100,v)); }
+
+function getDiplSt(inf){
+  if(inf>=90)return{cls:'ds-a',label:'СОЮЗНИК'};
+  if(inf>=70)return{cls:'ds-l',label:'СКЛОНЯЕТСЯ'};
+  if(inf<=20)return{cls:'ds-h',label:'ВРАЖДЕБЕН'};
+  return{cls:'ds-n',label:'НЕЙТРАЛЕН'};
+}
+
+function renderDiplomacy(){
+  var el=document.getElementById('dipl-list');if(!el)return;el.innerHTML='';
+  Object.keys(DIPL_COUNTRIES).forEach(function(key){
+    var c=DIPL_COUNTRIES[key];
+    var inf=getDiplInf(key);
+    var st=getDiplSt(inf);
+    var act=c.actions[side]||'Нет прямых рычагов.';
+    var bon=c.bonus[side]||'';
+    var d=document.createElement('div');d.className='dipl-country';
+    d.innerHTML='<div class="dipl-head"><span style="font-size:14px">'+c.flag+'</span>'
+      +'<span class="dipl-name">'+c.name+'</span>'
+      +'<span class="dipl-status '+st.cls+'">'+st.label+'</span></div>'
+      +'<div class="dipl-bar-row"><div class="dipl-bar"><div class="dipl-bar-fill" style="width:'+inf+'%"></div></div>'
+      +'<span class="dipl-val">'+Math.round(inf)+'</span></div>'
+      +'<div class="dipl-desc">'+c.desc+'</div>'
+      +(bon?'<div style="font-size:8px;color:#60a5fa;margin-bottom:4px">▸ '+bon+'</div>':'')
+      +'<button class="dipl-act" onclick="doDiplAction(\''+key+'\')"'+(busy?' disabled':'')+'>'+act+'</button>';
+    el.appendChild(d);
+  });
+}
+
+async function doDiplAction(key){
+  if(busy)return;
+  var c=DIPL_COUNTRIES[key];
+  var curInf=getDiplInf(key);
+  busy=true;
+  document.querySelectorAll('.dipl-act').forEach(function(b){b.disabled=true;});
+  turn++;updateClock(turn);
+  switchTab('mil');
+  addEntry('ДИПЛОМАТИЯ / '+c.flag+' '+c.name,c.actions[side]||'','',true);
+  addThinking();
+  var sys='Ты движок дипломатической механики игры про войну США-Иран 2026. ТОЛЬКО на русском. Ответ — ТОЛЬКО JSON:\n'
+    +'{"narrative":"2-3 предложения о переговорах","result":"успех|частичный|провал","delta_influence":-15..25,"tension_delta":-5..5,"oil_delta":-3..3,"support_delta":-5..5,"event":"1 новостная строка"}\n'
+    +'Контекст: сторона='+side+', цель='+c.name+', влияние '+side+'→'+c.name+'='+curInf+', напряжённость='+tension+', ход='+turn+'.';
+  try{
+    var resp=await fetch(API_URL,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:API_MODEL,max_tokens:700,system:sys,
+        messages:diplHist.slice(-4).concat([{role:'user',content:'Дипломатическое действие: "'+c.actions[side]+'" с '+c.name}])})
+    });
+    var data=await resp.json();
+    if(!resp.ok){ throw new Error('HTTP '+resp.status+(data&&data.error?' — '+data.error.message:'')); }
+    var raw='';if(data&&data.content)data.content.forEach(function(b){if(b.type==='text')raw+=b.text;});
+    var p=extractJSON(raw);
+    removeThinking();
+    setDiplInf(key, curInf+(p.delta_influence||0));
+    if(p.tension_delta)tension=Math.max(0,Math.min(100,tension+p.tension_delta));
+    if(p.oil_delta)oil=Math.max(60,Math.min(200,oil+p.oil_delta));
+    if(p.support_delta)support=Math.max(0,Math.min(100,support+p.support_delta));
+    var outcome=p.result==='успех'?'✓ УСПЕХ':p.result==='частичный'?'~ ЧАСТИЧНЫЙ':'✗ ПРОВАЛ';
+    addEntry('ДИПЛОМАТИЯ / '+c.flag+' '+c.name,p.narrative+' ['+outcome+']',null,false);
+    if(p.event){recentEvents.unshift({text:p.event,type:'dip',evside:'global'});if(recentEvents.length>8)recentEvents=recentEvents.slice(0,8);renderEvents();}
+    if(getDiplInf(key)>=90){support=Math.min(100,support+10);addEntry('ДИПЛОМАТИЯ','★ '+c.flag+' '+c.name+' присоединяется к вашей коалиции!',null,false);}
+    diplHist.push({role:'user',content:'Действие: '+c.actions[side]});
+    diplHist.push({role:'assistant',content:raw});
+    updateMetrics();renderDiplomacy();
+  }catch(e){removeThinking();addEntry('СИСТЕМА','[Диплом. сбой: '+e.message+']',null,false);}
+  busy=false;
+  document.querySelectorAll('.dipl-act').forEach(function(b){b.disabled=false;});
+  switchTab('dip');
+}
+
+
+// ── POLITICS SYSTEM ──────────────────────────────────────────
+// Per-side political actions. Each has: fatigue effect, support effect,
+// tension effect, cooldown (turns), and a cost note.
+var POL_ACTIONS = {
+  usa: [
+    {id:'briefing',   icon:'📢', name:'Брифинг для Конгресса',
+     desc:'Закрытый брифинг для лидеров Конгресса. Снижает внутреннее давление, сохраняет поддержку.',
+     effect:'Усталость США -8, поддержка +5', fat:-8, sup:+5, ten:0, cd:3},
+    {id:'presser',    icon:'🎙', name:'Пресс-конференция Трампа',
+     desc:'Публичная речь. Переключает внимание на «победы». Рискованно — может усилить критику.',
+     effect:'Усталость США -5, случайно ±поддержка', fat:-5, sup:+3, ten:+1, cd:2},
+    {id:'censorship', icon:'🔇', name:'Военная цензура СМИ',
+     desc:'Ограничить репортажи с фронта. Краткосрочное облегчение, долгосрочный репутационный риск.',
+     effect:'Усталость США -10, поддержка -8', fat:-10, sup:-8, ten:0, cd:4},
+    {id:'draft',      icon:'🪖', name:'Объявить частичную мобилизацию',
+     desc:'Расширить призыв резервистов. Увеличивает военный потенциал, но бьёт по рейтингу.',
+     effect:'Усталость США +5, военная мощь +10', fat:+5, sup:-5, ten:+3, mil:10, cd:5},
+    {id:'rally',      icon:'🇺🇸', name:'Митинг «Сплочённость нации»',
+     desc:'Патриотическая кампания. Работает на ранних ходах, теряет эффект при высоких потерях.',
+     effect:'Усталость США -6, поддержка +4', fat:-6, sup:+4, ten:0, cd:3},
+  ],
+  iran: [
+    {id:'khamenei',   icon:'🕌', name:'Речь Хаменеи о «священной обороне»',
+     desc:'Верховный лидер объявляет войну священным джихадом. Мощная мобилизация.',
+     effect:'Усталость Ирана -12, напряжённость +3', fat:-12, sup:0, ten:+3, cd:4},
+    {id:'friday',     icon:'🕋', name:'Пятничные молитвы-митинги',
+     desc:'Скоординированные митинги по всей стране. Демонстрирует народную поддержку.',
+     effect:'Усталость Ирана -8, поддержка союзников +3', fat:-8, sup:+3, ten:0, cd:2},
+    {id:'irgc_press', icon:'⚔️', name:'КСИР подавляет протесты',
+     desc:'Жёсткое подавление инакомыслия. Краткосрочная стабилизация, международный резонанс.',
+     effect:'Усталость Ирана -15, поддержка -10', fat:-15, sup:-10, ten:+2, cd:5},
+    {id:'internet',   icon:'📵', name:'Отключить интернет',
+     desc:'Полная блокировка соцсетей и VPN. Изолирует от внешнего влияния.',
+     effect:'Усталость Ирана -10, поддержка союзников -5', fat:-10, sup:-5, ten:0, cd:4},
+    {id:'martyrs',    icon:'🩸', name:'Культ мучеников — пропаганда потерь',
+     desc:'Превратить потери в символ сопротивления. Мобилизующий эффект.',
+     effect:'Усталость Ирана -7, военная мощь +5 (мотивация)', fat:-7, sup:0, ten:0, mil:5, cd:3},
+  ],
+  israel: [
+    {id:'nation',     icon:'📺', name:'Обращение к нации',
+     desc:'Нетаньяху выступает в прямом эфире. Консолидация общества вокруг флага.',
+     effect:'Усталость Израиля -8, поддержка +4', fat:-8, sup:+4, ten:0, cd:3},
+    {id:'opposition', icon:'🤝', name:'Брифинг оппозиции',
+     desc:'Закрытый брифинг лидеров оппозиции. Снижает внутренний раскол.',
+     effect:'Усталость Израиля -6, поддержка +6', fat:-6, sup:+6, ten:0, cd:3},
+    {id:'holocaust',  icon:'✡️', name:'Апелляция к экзистенциальной угрозе',
+     desc:'Риторика выживания — «Никогда снова». Максимальная мобилизация резервистов.',
+     effect:'Усталость Израиля -10, военная мощь +8', fat:-10, sup:+2, ten:+2, mil:8, cd:4},
+    {id:'media',      icon:'📰', name:'Давление на СМИ',
+     desc:'Военная цензура репортажей о потерях. Краткосрочно облегчает давление.',
+     effect:'Усталость Израиля -7, поддержка -5', fat:-7, sup:-5, ten:0, cd:4},
+    {id:'reserves',   icon:'🪖', name:'Расширить призыв резервистов',
+     desc:'Полная мобилизация. Израильская армия удваивает боеспособность.',
+     effect:'Усталость Израиля +4, военная мощь +12', fat:+4, sup:0, ten:+2, mil:12, cd:5},
+  ],
+  gulf: [
+    {id:'fatwa',      icon:'📿', name:'Фетва улемов в поддержку войны',
+     desc:'Религиозное одобрение от исламских учёных. Легитимизирует военные действия.',
+     effect:'Усталость GCC -10, поддержка +5', fat:-10, sup:+5, ten:0, cd:4},
+    {id:'tribes',     icon:'🏴', name:'Мобилизация племенной лояльности',
+     desc:'МБС апеллирует к племенным вождям. Традиционная форма консолидации.',
+     effect:'Усталость GCC -8, поддержка +3', fat:-8, sup:+3, ten:0, cd:3},
+    {id:'media_gcc',  icon:'📡', name:'Медиа-кампания против Ирана (Al Arabiya)',
+     desc:'Информационная война через государственные СМИ. Формирует нарратив.',
+     effect:'Усталость GCC -5, напряжённость Ирана +2', fat:-5, sup:+2, ten:+2, cd:2},
+    {id:'payments',   icon:'💰', name:'Повысить выплаты гражданам',
+     desc:'Увеличить субсидии и пособия. Дорого, но эффективно в монархии.',
+     effect:'Усталость GCC -12, поддержка -3 (истощение бюджета)', fat:-12, sup:-3, ten:0, cd:5},
+    {id:'armistice',  icon:'🕊', name:'Выступить с мирной инициативой',
+     desc:'GCC предлагает себя медиатором. Может снизить напряжённость и поднять рейтинг.',
+     effect:'Усталость GCC -4, напряжённость -5, поддержка +8', fat:-4, sup:+8, ten:-5, cd:4},
+  ],
+};
+
+// Cooldown tracking: polCooldowns[actionId] = turnsRemaining
+var polCooldowns = {};
+
+function getPolActions(){ return POL_ACTIONS[side] || []; }
+
+function renderPolPanel(){
+  var el = document.getElementById('pol-list'); if(!el) return;
+  el.innerHTML = '';
+
+  // Header: current fatigue of playing side
+  var fat = fatigue[side]||0;
+  var fatColor = fat>70?'#ef4444':fat>40?'#f97316':'#22c55e';
+  var banner = document.createElement('div');
+  banner.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-bottom:8px';
+  banner.innerHTML = '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px">УСТАЛОСТЬ ОТ ВОЙНЫ</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">'
+    + '<div style="width:'+fat+'%;height:100%;background:'+fatColor+';border-radius:2px;transition:width 0.4s"></div>'
+    + '</div><span style="font-size:10px;font-weight:700;color:'+fatColor+'">'+fat+'%</span></div>'
+    + '<div style="font-size:8px;color:var(--text3);margin-top:4px">'
+    + (fat>=80?'⚠ КРИТИЧНО — риск политического краха':fat>=50?'Общество устало от войны':'Внутренняя поддержка стабильна')
+    + '</div>';
+  el.appendChild(banner);
+
+  // Action cards
+  getPolActions().forEach(function(act){
+    var cd = polCooldowns[act.id] || 0;
+    var disabled = busy || cd > 0;
+    var d = document.createElement('div');
+    d.className = 'dipl-country';
+    if(cd>0) d.style.opacity = '0.6';
+
+    d.innerHTML = '<div class="dipl-head">'
+      + '<span style="font-size:14px">'+act.icon+'</span>'
+      + '<span class="dipl-name">'+act.name+'</span>'
+      + (cd>0 ? '<span class="dipl-status ds-n">КД '+cd+'х</span>' : '<span class="dipl-status ds-l">ДОСТУПНО</span>')
+      + '</div>'
+      + '<div class="dipl-desc">'+act.desc+'</div>'
+      + '<div style="font-size:8px;color:#60a5fa;margin-bottom:5px">▸ '+act.effect+'</div>'
+      + '<button class="dipl-act" data-polid="'+act.id+'" '+(disabled?'disabled':'')+' onclick="doPolAction(this.dataset.polid)">ПРИМЕНИТЬ</button>';
+    el.appendChild(d);
+  });
+}
+
+async function doPolAction(actId){
+  if(busy) return;
+  var act = getPolActions().find(function(a){return a.id===actId;});
+  if(!act) return;
+  if(polCooldowns[actId]>0){ addEntry('ПОЛИТИКА','Действие на перезарядке.',null,false); return; }
+
+  busy=true;
+  document.querySelectorAll('.dipl-act').forEach(function(b){b.disabled=true;});
+  turn++; updateClock(turn);
+  switchTab('mil');
+  addEntry('ПОЛИТИКА / '+act.icon+' '+act.name, act.desc,'',true);
+  addThinking();
+
+    var sys = 'Ты нарративный движок политической механики игры. ТОЛЬКО на русском. Ответ — ТОЛЬКО JSON без markdown:\n'
+    +'{"narrative":"2-3 предложения о внутриполитическом эффекте","event":"1 новостная строка"}\n'
+    +'Контекст: сторона='+side+', действие="'+act.name+'", усталость='+fatigue[side]+'%, напряжённость='+tension+', ход='+turn+'.';
+
+  try{
+    var resp = await fetch(API_URL,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:API_MODEL,max_tokens:400,system:sys,
+        messages:[{role:'user',content:'Политическое действие: "'+act.name+'"'}]})
+    });
+    var data = await resp.json();
+    var raw=''; if(data&&data.content)data.content.forEach(function(b){if(b.type==='text')raw+=b.text;});
+    var p = extractJSON(raw);
+    removeThinking();
+
+    // Apply effects
+    fatigue[side] = Math.max(0,Math.min(100, fatigue[side] + (act.fat||0)));
+    support       = Math.max(0,Math.min(100, support      + (act.sup||0)));
+    tension       = Math.max(0,Math.min(100, tension      + (act.ten||0)));
+    if(act.mil)   military[side] = Math.max(0,Math.min(100, military[side] + act.mil));
+
+    // Set cooldown
+    polCooldowns[actId] = act.cd || 2;
+
+    addEntry('ПОЛИТИКА / '+act.icon+' '+act.name, p.narrative||act.desc, null, false);
+    if(p.event){ recentEvents.unshift({text:p.event,type:'pol',evside:side}); if(recentEvents.length>8)recentEvents=recentEvents.slice(0,8); renderEvents(); }
+    updateMetrics();
+    renderPolPanel();
+    triggerEvents();
+  }catch(e){
+    removeThinking();
+    addEntry('СИСТЕМА','[Полит. сбой: '+e.message+']',null,false);
+  }
+  busy=false;
+  document.querySelectorAll('.dipl-act').forEach(function(b){b.disabled=false;});
+  switchTab('pol');
+}
+
+// Tick down cooldowns each turn
+function tickPolCooldowns(){
+  Object.keys(polCooldowns).forEach(function(k){
+    if(polCooldowns[k]>0) polCooldowns[k]--;
+  });
+}
+
+
+// ── MARKER RENDER SYSTEM ──────────────────────────────────────
+// Converts km range to SVG pixels at map center latitude (~25°N)
+// 1° longitude ≈ 111km * cos(25°) ≈ 100.6km; scale=834 at center
+function kmToSvgPx(km){
+  // At projection scale 834, center [49.5, 25.598]:
+  // empirically: 1° lon = ~5.1px at this zoom, 1° = ~111km*cos(25°)≈100.6km
+  // so 1px ≈ 100.6/5.1 ≈ 19.7 km
+  return km / 19.7;
+}
+
+function renderMapMarkers(){
+  if(!window._mapProjection || !window._mapZoomGroup) return;
+  var proj  = window._mapProjection;
+  var zg    = window._mapZoomGroup;
+  // Counter-scale: markers stay same screen size regardless of zoom
+  var k = window._mapScale || 1;
+  var inv = 1/k;  // scale factor to apply to sizes
+
+  // Remove previous marker layer
+  zg.selectAll('.marker-layer').remove();
+  var mG = zg.append('g').attr('class','marker-layer markers');
+
+  // Radar rings layer (behind markers)
+  var rG = zg.insert('g','.marker-layer').attr('class','marker-layer radar-rings');
+
+  MARKERS_DEF.forEach(function(m){
+    var hp = m.maxHp===null ? null : getMarkerHp(m.id);
+    var destroyed = hp !== null && hp <= 0;
+    if(destroyed) return; // removed from map when destroyed
+    var pt = proj([m.lon, m.lat]);
+    if(!pt) return;
+    var x=pt[0], y=pt[1];
+
+    // Visibility: own markers always visible
+    // Enemy markers visible only if inside range of any own radar that is alive
+    var isOwn  = (m.side === side) ||
+                 (m.side==='israel' && side==='usa') ||  // USA sees Israeli assets
+                 (m.side==='usa'    && side==='israel');
+    var inEnemySide = !isOwn;
+
+    if(inEnemySide){
+      // Cities and militia always visible — public geography, can't be hidden
+      var alwaysVisible = (m.type==='city' || m.type==='militia' || m.maxHp===null);
+      if(!alwaysVisible){
+        // Military assets only visible if inside our radar coverage
+        var covered = MARKERS_DEF.some(function(r){
+          if(r.type!=='radar') return false;
+          if(r.side!==side) return false;
+          if(getMarkerHp(r.id)<=0) return false;
+          var rpt = proj([r.lon, r.lat]);
+          if(!rpt) return false;
+          var dx=x-rpt[0], dy=y-rpt[1];
+          var distPx = Math.sqrt(dx*dx+dy*dy);
+          return distPx <= kmToSvgPx(r.range_km);
+        });
+        if(!covered) return; // hidden — not in any radar range
+      }
+    }
+
+    // ── Draw radar coverage ring ──────────────────────────────
+    if(m.type==='radar' && isOwn && !destroyed){
+      var rpx = kmToSvgPx(m.range_km);
+      rG.append('circle')
+        .attr('cx',x).attr('cy',y).attr('r',rpx)
+        .attr('fill','none')
+        .attr('stroke', m.color)
+        .attr('stroke-width', 0.6)
+        .attr('stroke-dasharray','4,3')
+        .attr('opacity', 0.25)
+        .attr('pointer-events','none');
+    }
+
+    // ── Draw marker shape ─────────────────────────────────────
+    // ALL shapes use same side color (unify). Nuclear stays orange. Militia stays dark-green.
+    var sideColor = {usa:'#3b82f6', iran:'#22c55e', israel:'#eab308', gulf:'#f97316'}[m.side] || m.color;
+    var color = (m.type==='nuclear') ? '#f97316'
+              : (m.type==='militia') ? '#4a7a5a'
+              : sideColor;
+    var alpha = inEnemySide ? 0.6 : 0.9;
+
+    // Base size S=5 screen-px for all non-city objects; cities S=7.
+    // Divide by k (current zoom) so they stay constant screen size.
+    var S = (m.type==='city' ? 7 : 5) * inv;
+
+    if(m.type==='city'){
+      // Large filled circle + white ring
+      mG.append('circle').attr('id','dot-'+m.id)
+        .attr('cx',x).attr('cy',y).attr('r',S)
+        .attr('fill',color).attr('opacity',alpha);
+      mG.append('circle')
+        .attr('cx',x).attr('cy',y).attr('r',S+1.5*inv)
+        .attr('fill','none').attr('stroke','rgba(255,255,255,0.3)').attr('stroke-width',0.8*inv)
+        .attr('pointer-events','none');
+      // City always gets a name label
+      mG.append('text')
+        .attr('x',x+S+3*inv).attr('y',y+3*inv)
+        .style('font-family','DM Mono, monospace')
+        .style('font-size',(8*inv)+'px')
+        .style('fill',color).style('opacity',0.85)
+        .style('pointer-events','none').style('letter-spacing','0.5px')
+        .text(m.label);
+    } else if(m.type==='radar'){
+      // Small rotated square
+      mG.append('rect').attr('id','dot-'+m.id)
+        .attr('x',x-S).attr('y',y-S).attr('width',S*2).attr('height',S*2)
+        .attr('fill',color).attr('opacity',alpha*0.8)
+        .attr('transform','rotate(45,'+x+','+y+')');
+    } else if(m.type==='airbase'){
+      // Triangle up
+      mG.append('polygon').attr('id','dot-'+m.id)
+        .attr('points',x+','+(y-S*1.4)+' '+(x-S)+','+(y+S*0.7)+' '+(x+S)+','+(y+S*0.7))
+        .attr('fill',color).attr('opacity',alpha);
+    } else if(m.type==='missile'){
+      // Diamond
+      mG.append('polygon').attr('id','dot-'+m.id)
+        .attr('points',x+','+(y-S*1.4)+' '+(x+S)+','+y+' '+x+','+(y+S*1.4)+' '+(x-S)+','+y)
+        .attr('fill',color).attr('opacity',alpha);
+    } else if(m.type==='carrier'){
+      // Wide rectangle
+      mG.append('rect').attr('id','dot-'+m.id)
+        .attr('x',x-S*2).attr('y',y-S*0.7).attr('width',S*4).attr('height',S*1.4)
+        .attr('rx',S*0.4).attr('fill',color).attr('opacity',alpha);
+    } else if(m.type==='base'){
+      // Rotated square (larger than radar)
+      mG.append('rect').attr('id','dot-'+m.id)
+        .attr('x',x-S).attr('y',y-S).attr('width',S*2).attr('height',S*2)
+        .attr('rx',S*0.2).attr('fill',color).attr('opacity',alpha)
+        .attr('transform','rotate(45,'+x+','+y+')');
+    } else {
+      // Circle for nuclear, militia, strike
+      mG.append('circle').attr('id','dot-'+m.id)
+        .attr('cx',x).attr('cy',y).attr('r',S)
+        .attr('fill',color).attr('opacity',alpha);
+    }
+
+    // ── Click handler — show tooltip with name + HP ──────────
+    // No text labels on map; info shown on click/tap instead
+    (function(marker, mx, my, mhp, mdest){
+      var hitEl = mG.append('circle')
+        .attr('cx', mx).attr('cy', my)
+        .attr('r', 10*inv)
+        .attr('fill', 'transparent')
+        .attr('cursor', 'pointer')
+        .attr('pointer-events', 'all');
+
+      hitEl.on('click', function(event){
+        event.stopPropagation();
+        var tt = document.getElementById('marker-tooltip');
+        if(!tt) return;
+        var container = document.getElementById('map-container');
+        var rect = container.getBoundingClientRect();
+        var cx = event.clientX - rect.left + 8;
+        var cy = event.clientY - rect.top  - 8;
+        // Keep tooltip inside container
+        if(cx + 160 > rect.width)  cx = cx - 170;
+        if(cy + 40  > rect.height) cy = cy - 48;
+
+        var hpText = mhp!==null ? (mdest?'  ✕ УНИЧТОЖЕН':'  HP: '+mhp+'%') : '';
+        var markerIcons = {brt:'🟢',hth:'🔴',teh:'🇮🇷',fordow:'🇮🇷',nat:'🇮🇷',tlv:'🇮🇱',riy:'🇸🇦'};
+        var sideIcon = markerIcons[marker.id] || {usa:'🇺🇸',iran:'🇮🇷',israel:'🇮🇱',gulf:'🇸🇦'}[marker.side]||'';
+        tt.innerHTML = sideIcon+' <b>'+marker.label+'</b>'+hpText;
+        tt.style.left = cx+'px';
+        tt.style.top  = cy+'px';
+        tt.style.display = 'block';
+        tt.style.color = mdest?'#666':marker.color;
+        // Auto-hide after 3s
+        clearTimeout(tt._hide);
+        tt._hide = setTimeout(function(){ tt.style.display='none'; }, 3000);
+      });
+    })(m, x, y, hp, destroyed);
+  });
+
+  // Click on map background hides tooltip
+  zg.on('click.tooltip', function(){ 
+    var tt=document.getElementById('marker-tooltip');
+    if(tt) tt.style.display='none';
+  });
+}
+
+// Called after metrics update so map reflects damage
+window.onMetricsUpdate_prev = window.onMetricsUpdate;
+
+
+// ── OBJECT WEIGHTS ────────────────────────────────────────────
+// Impact on military[side] and fatigue[side] when object hp hits 0
+var OBJECT_WEIGHTS = {
+  // type -> {mil: military impact, fat: fatigue impact, missilesCap: reduce missiles capacity}
+  airbase:  {mil:-8,  fat:3,  missilesCap:0},
+  missile:  {mil:-5,  fat:2,  missilesCap:-30},
+  carrier:  {mil:-20, fat:15, missilesCap:-40},
+  base:     {mil:-7,  fat:4,  missilesCap:0},
+  nuclear:  {mil:-5,  fat:4,  missilesCap:0},
+  radar:    {mil:-3,  fat:1,  missilesCap:0},
+  militia:  {mil:-4,  fat:2,  missilesCap:0},
+};
+
+// Recalculate military[s] from surviving objects (weighted average)
+function recalcMilitary(s){
+  var objs = MARKERS_DEF.filter(function(m){ return m.side===s && m.maxHp!==null; });
+  if(!objs.length) return;
+  var totalHp=0, totalMax=0;
+  objs.forEach(function(m){
+    totalHp  += getMarkerHp(m.id);
+    totalMax += m.maxHp;
+  });
+  military[s] = Math.round(totalMax>0 ? (totalHp/totalMax)*100 : 0);
+}
+
+// Process strikes from AI response
+function processStrikes(strikesArr){
+  if(!strikesArr || !strikesArr.length) return;
+  strikesArr.forEach(function(s){
+    if(!s.id || s.dmg===undefined) return;
+    var marker = MARKERS_DEF.find(function(m){ return m.id===s.id; });
+    if(!marker || marker.maxHp===null) return;
+    var dmg = Math.max(0,Math.min(100, s.dmg));
+    var prevHp = getMarkerHp(s.id);
+    var newHp  = Math.max(0, prevHp - dmg);
+    markerHp[s.id] = newHp;
+
+    // Object just destroyed?
+    if(prevHp > 0 && newHp <= 0){
+      var w = OBJECT_WEIGHTS[marker.type] || {mil:0, fat:0, missilesCap:0};
+      var owner = marker.side;
+      // Military impact on owner
+      military[owner] = Math.max(0, military[owner] + w.mil);
+      // Fatigue impact on owner
+      fatigue[owner]  = Math.min(100, Math.round(fatigue[owner] + w.fat));
+      // Reduce missile capacity if applicable
+      if(w.missilesCap < 0){
+        MISSILES_START[owner] = Math.max(0, (MISSILES_START[owner]||0) + w.missilesCap);
+        missiles[owner]       = Math.min(missiles[owner]||0, MISSILES_START[owner]);
+      }
+      addEntry('РАЗРУШЕНО','✕ '+marker.label+' уничтожен.',null,false);
+    }
+    // Recalculate military from surviving objects
+    recalcMilitary(marker.side);
+  });
+  renderMapMarkers();
+}
+
+function resetDiplomacy(){
+  diplInfluence={};
+  diplHist=[];
+  // Reset both ZONE_DEFS and flat PROVINCES
+  if(typeof ZONE_DEFS!=='undefined'){
+    Object.keys(ZONE_DEFS).forEach(function(cc){
+      ZONE_DEFS[cc].forEach(function(z){
+        z.ctrl=(z.id==='s_leb'||z.id==='n_yemen')?'iran':null;
+      });
+    });
+  }
+  if(typeof PROVINCES!=='undefined'){
+    PROVINCES.forEach(function(p){
+      p.ctrl=(p.id==='s_leb'||p.id==='n_yemen')?'iran':null;
+    });
+  }
+  renderDiplomacy();
+  if(typeof renderProvinces==='function') renderProvinces();
+}
+
+// ── PROVINCES — real geographic boundaries from admin-1 TopoJSON ──
+var CTRL_COLORS={
+  usa:   {fill:'#111f3d', stroke:'none', border:'none'},
+  iran:  {fill:'#133617', stroke:'none', border:'none'},
+  israel:{fill:'#322900', stroke:'none', border:'none'},
+  gulf:  {fill:'#2c1b00', stroke:'none', border:'none'},
+};
+// Lighter fill for allied country on map (not province — future use)
+var ALLY_FILLS={
+  usa:'#1a2f50', iran:'#0d2818', israel:'#2a2500', gulf:'#2a1800',
+};
+
+// Zone definitions: map game zone IDs to real province names in Highcharts TopoJSON
+// Each country code → array of zones, each zone has list of province names to merge
+var ZONE_DEFS = {
+  ir: [
+    {id:'khuzestan', name:'ХУЗЕСТАН',    ctrl:null, desc:'80% нефти Ирана.',
+     names:['Khuzestan']},
+    {id:'tehran',    name:'ТЕГЕРАН',     ctrl:null, desc:'Столичный регион.',
+     names:['Tehran','Alborz']},
+    {id:'khorasan',  name:'ХОРАСАН',     ctrl:null, desc:'Восточная граница.',
+     names:['Razavi Khorasan','North Khorasan','South Khorasan']},
+    {id:'fars',      name:'ФАРС',        ctrl:null, desc:'Персидский залив, нефть.',
+     names:['Fars','Hormozgan','Bushehr']},
+    {id:'aziran',    name:'АЗ.ИРАНСКИЙ', ctrl:null, desc:'Северо-запад, Тебриз.',
+     names:['East Azarbaijan','West Azarbaijan','Ardebil']},
+    {id:'c_iran',    name:'ЦЕН.ИРАН',   ctrl:null, desc:'Исфахан, центральные провинции.',
+     names:['Esfahan','Semnan','Qom','Markazi','Zanjan','Gilan','Mazandaran','Golestan','Qazvin',
+            'Kerman','Yazd','Sistan and Baluchestan','Chahar Mahall and Bakhtiari',
+            'Kohgiluyeh and Buyer Ahmad']},
+    {id:'w_iran',    name:'ЗАПАД.ИРАН',  ctrl:null, desc:'Граница с Ираком.',
+     names:['Kermanshah','Ilam','Lorestan','Kordestan','Hamadan']},
+  ],
+  iq: [
+    // Exact Highcharts names: Arbil, As-Sulaymaniyah, Dihok, + Kirkuk = At-Ta'mim
+    {id:'kurdistan', name:'КУРДИСТАН',   ctrl:null, desc:'Де-факто независимый регион KRG.',
+     names:["Arbil","As-Sulaymaniyah","Dihok","At-Ta'mim"]},
+    {id:'ninawa',    name:'НИНЕВА',      ctrl:null, desc:'Мосул, северо-запад.',
+     names:['Ninawa']},
+    {id:'c_iraq',    name:'ЦЕН.ИРАК',   ctrl:null, desc:'Багдад, Анбар, суннитский пояс.',
+     names:['Baghdad','Al-Anbar','Sala ad-Din','Diyala','Babil','Wasit',"Karbala'",'An-Najaf','Al-Qadisiyah']},
+    {id:'s_iraq',    name:'ЮГ.ИРАК',    ctrl:null, desc:'Басра, шиитский юг.',
+     names:['Al-Basrah','Dhi-Qar','Al-Muthannia','Maysan']},
+  ],
+  sa: [
+    {id:'e_saudi',   name:'ВОСТОК',      ctrl:null, desc:'Нефть. Абкайк, Дахран.',
+     names:['Ash Sharqiyah']},
+    {id:'riyadh_z',  name:'ЭР-РИЯД',    ctrl:null, desc:'Столица и центр.',
+     names:['Ar Riyad','Al Quassim']},
+    {id:'hejaz',     name:'ХИДЖАЗ',      ctrl:null, desc:'Мекка, Медина.',
+     names:['Makkah','Al Madinah']},
+    {id:'asir',      name:'АСИР / ЮГ',   ctrl:null, desc:'Граница с Йеменом, угроза хуситов.',
+     names:["`Asir",'Jizan','Najran','Al Bahah']},
+    {id:'n_saudi',   name:'СЕВЕР',       ctrl:null, desc:'Северные провинции, пустыня.',
+     names:['Tabuk',"Ha'il",'Al Jawf','Al Hudud ash Shamaliyah']},
+  ],
+  ye: [
+    // Exact names from TopoJSON. Houthis = all western+central+north (13 governorates)
+    {id:'n_yemen',   name:'ХУСИТЫ',     ctrl:'iran', allied:true, desc:'Весь западный и центральный Йемен.',
+     names:["Sa`dah","Hajjah","Amran","Al Hudaydah","Amanat Al Asimah","Sana'a",
+            "Al Mahwit","Raymah","Dhamar","Ibb","Ta`izz","Ma'rib","Al Jawf","Al Bayda'"]},
+    {id:'s_yemen',   name:'Ю.ЙЕМЕН',   ctrl:null, desc:'Аден и восток — правительство.',
+     names:["`Adan","Lahij","Abyan","Shabwah","Hadramawt","Al Mahrah"]},
+  ],
+  sy: [
+    // Exact Highcharts names for Syria
+    {id:'w_syria',   name:'СИРИЯ (ХТС)', ctrl:null, desc:'Правительство Джулани. Дамаск, Алеппо.',
+     names:['Damascus','Rif Dimashq','Aleppo','Homs (Hims)','Hamah','Lattakia','Tartus',
+            'Idlib',"Quneitra","Dar`a","As Suwayda'","Dayr Az Zawr","UNDOF"]},
+    {id:'ne_syria',  name:'СДС/РОЖАВА',  ctrl:null, desc:'Курдский регион на северо-востоке.',
+     names:['Hasaka (Al Haksa)','Ar Raqqah']},
+  ],
+  lb: [
+    {id:'n_leb',     name:'СЕВ.ЛИВАН', ctrl:null,   desc:'Бейрут, север.',
+     names:['Beirut','Mount Lebanon','North Lebanon','Beqaa']},
+    {id:'s_leb',     name:'ЮЖ.ЛИВАН', ctrl:'iran',  allied:true, desc:'Зона Хезболлы.',
+     names:['South Lebanon','An Nabatiyah']},
+  ],
+  il: [
+    // Exact Highcharts names for Israel (Hebrew transliterations)
+    // HaZafon = North, Haifa = Haifa, HaMerkaz = Center, Tel Aviv, Jerusalem, HaDarom = South
+    {id:'israel_n',  name:'СЕВ.ИЗРАИЛЬ', ctrl:null, desc:'Граница с Ливаном. Угроза Хезболлы.',
+     names:['HaZafon','Haifa']},
+    {id:'israel_c',  name:'ЦЕНТР',        ctrl:null, desc:'Тель-Авив, Иерусалим.',
+     names:['Tel Aviv','HaMerkaz','Jerusalem']},
+    {id:'israel_s',  name:'ЮГ (НЕГЕВ)',  ctrl:null, desc:'Граница с Газой и Синаем.',
+     names:['HaDarom']},
+  ],
+  jo: [
+    {id:'jordan_z',  name:'ИОРДАНИЯ',  ctrl:null, desc:'Иордания.',
+     names:['Amman','Zarqa','Irbid','Mafraq','Balqa','Karak','Madaba',
+            'Ajlun','Jarash','Tafilah',"Ma`an",'Aqaba']},
+  ],
+};
+
+// Flat province lookup for game logic
+var PROVINCES = [];
+Object.keys(ZONE_DEFS).forEach(function(cc){
+  ZONE_DEFS[cc].forEach(function(z){
+    PROVINCES.push({id:z.id, name:z.name, ctrl:z.ctrl||null, country:cc, desc:z.desc});
+  });
+});
+
+// Province geo data loaded from CDN (populated after map loads)
+var _provGeoData = {};  // cc -> {geojson features}
+var _provRendered = false;
+
+window.initProvinces = function(proj, zg, path_fn) {
+  window._provProjection = proj;
+  window._provZoomGroup  = zg;
+  window._provPath       = path_fn;
+
+  var BASE = 'https://cdn.jsdelivr.net/npm/@highcharts/map-collection@2.1.0/countries/';
+  var countries = Object.keys(ZONE_DEFS);
+  var loads = countries.map(function(cc){
+    return d3.json(BASE+cc+'/'+cc+'-all.topo.json').then(function(topo){
+      // Convert TopoJSON to GeoJSON features
+      var key = Object.keys(topo.objects)[0];
+      var features = topojson.feature(topo, topo.objects[key]).features;
+      _provGeoData[cc] = features;
+    }).catch(function(){ _provGeoData[cc] = []; });
+  });
+
+  Promise.all(loads).then(function(){
+    _provRendered = true;
+    // Log all province names to console for debugging
+    console.log('=== PROVINCE NAMES LOADED ===');
+    Object.keys(_provGeoData).forEach(function(cc){
+      var names = _provGeoData[cc].map(function(f){
+        return f.properties.name || f.properties.NAME || f.properties.NAME_1 || '?';
+      }).sort();
+      console.log('['+cc+'] ('+names.length+'): '+names.join(' | '));
+    });
+    renderProvinces();
+  });
+};
+
+function getProvFeatures(cc, names) {
+  var features = _provGeoData[cc] || [];
+  var matched = [];
+  features.forEach(function(f){
+    var n = (f.properties.name || f.properties.NAME || f.properties.NAME_1 || '').trim();
+    if(!n) return;
+    var hit = names.some(function(nm){
+      var nmT = nm.trim();
+      // Exact, case-insensitive, or substring match
+      return n.toLowerCase() === nmT.toLowerCase()
+          || n.toLowerCase().indexOf(nmT.toLowerCase()) >= 0
+          || nmT.toLowerCase().indexOf(n.toLowerCase()) >= 0;
+    });
+    if(hit) matched.push(f);
+  });
+  return matched;
+}
+// Debug helper — call from browser console: _logProv('ye')
+window._logProv = function(cc){
+  (_provGeoData[cc]||[]).forEach(function(f){
+    console.log('"'+(f.properties.name||f.properties.NAME||'?')+'"');
+  });
+};
+
+function renderProvinces() {
+  if(!window._provZoomGroup) return;
+  var zg = window._provZoomGroup;
+  var pathFn = window._provPath;
+  zg.selectAll('.prov-group').remove();
+  if(!_provRendered) return;
+
+  var pg = zg.append('g').attr('class','prov-group');
+
+  Object.keys(ZONE_DEFS).forEach(function(cc){
+    ZONE_DEFS[cc].forEach(function(zone){
+      var controlled = !!zone.ctrl;
+      var cc_val = controlled ? CTRL_COLORS[zone.ctrl] : null;
+
+      var feats = getProvFeatures(cc, zone.names);
+      if(!feats.length) return;
+
+      feats.forEach(function(f){
+        pg.append('path')
+          .attr('class','prov-path')
+          .attr('d', pathFn(f))
+          .attr('fill', controlled ? (zone.allied ? CTRL_COLORS[zone.ctrl].fill : 'url(#hatch-'+zone.ctrl+')') : 'none')
+          .attr('stroke', 'none')
+          .attr('pointer-events','none');
+      });
+
+      // Label only for controlled zones
+      if(controlled){
+        try {
+          var c = pathFn.centroid(feats[0]);
+          if(c && !isNaN(c[0])){
+            pg.append('text').attr('class','prov-label')
+              .attr('x', c[0]).attr('y', c[1]+3)
+              .attr('text-anchor','middle')
+              .text(zone.name);
+          }
+        } catch(e){}
+      }
+    });
+  });
+}
+
+// Sync ZONE_DEFS ctrl with PROVINCES on capture
+function captureProvince(provId, captor) {
+  // Update in both arrays
+  PROVINCES.forEach(function(p){ if(p.id===provId) p.ctrl=captor; });
+  Object.keys(ZONE_DEFS).forEach(function(cc){
+    ZONE_DEFS[cc].forEach(function(z){ if(z.id===provId) z.ctrl=captor; });
+  });
+  renderProvinces();
+
+  var pv = PROVINCES.find(function(p){return p.id===provId;});
+  if(!pv) return;
+  if(provId==='khuzestan'||provId==='e_saudi') { oil=Math.max(60,Math.min(200,oil+(captor?+12:-8))); updateMetrics(); }
+  if(provId==='tehran'&&captor&&captor!=='iran') { tension=Math.min(100,tension+18); updateMetrics(); }
+  if(provId==='n_yemen'||provId==='s_leb') { oil=Math.max(60,Math.min(200,oil+(captor==='iran'?+6:-4))); updateMetrics(); }
+  var names={usa:'🇺🇸 США',iran:'🇮🇷 ИРАН',israel:'🇮🇱 ИЗРАИЛЬ',gulf:'🇸🇦 GCC'};
+  addEntry('КОНТРОЛЬ ТЕРРИТОРИЙ',
+    (captor ? '★ '+(names[captor]||captor)+' — захвачена' : '☆ Утрачена зона')
+    +': '+pv.name+'. '+pv.desc, null, false);
+}
+
+// Home provinces per side — can't capture your own territory
+var SIDE_HOME_PROVS = {
+  iran:   ['khuzestan','tehran','khorasan','fars','aziran','c_iran','w_iran','n_yemen','s_leb'],
+  usa:    ['israel_n','israel_c','israel_s'],
+  israel: ['israel_n','israel_c','israel_s'],
+  gulf:   ['e_saudi','riyadh_z','hejaz','asir','n_saudi'],
+};
+
+function processProvinceCaptures(p) {
+  if(!p.capture) return;
+  var caps = Array.isArray(p.capture) ? p.capture : [p.capture];
+  caps.forEach(function(c){
+    if(!c.province||!c.by) return;
+    // Block capturing own province
+    var home = SIDE_HOME_PROVS[c.by] || [];
+    if(home.indexOf(c.province) >= 0) return; // silently ignore
+    if(tension < 70){
+      addEntry('ШТАБ','Наземные операции недоступны — напряжённость '+tension+'% (нужно 70%+)',null,false);
+      return;
+    }
+    var atF = fatigue[c.by]||50;
+    var pv2 = PROVINCES.find(function(pv){return pv.id===c.province;});
+    var defCountry = pv2 ? pv2.country : 'iran';
+    var fatigueMap = {ir:'iran',iq:'iran',sa:'gulf',ye:'iran',sy:'iran',lb:'iran',il:'israel',jo:'gulf'};
+    var defF = fatigue[fatigueMap[defCountry]||'iran']||50;
+    var prob = Math.max(0.05, Math.min(0.85, ((100-atF)/100)*(tension/100)*(defF/100)*1.8));
+    if(Math.random()<prob) captureProvince(c.province, c.by);
+    else addEntry('ШТАБ','Попытка захвата '+c.province+' провалилась — противник удержал позиции.',null,false);
+  });
+}
+
+updateMetrics();
+</script>
+
+<!-- D3 + TopoJSON for real geography -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+// ── REAL GEOGRAPHY MAP ──────────────────────────────────────────────
+// Country ISO codes relevant to the conflict zone
+var FOCUS_ISO = {
+  // Belligerents — distinct accent colors
+  'IRN':{'name':'ИРАН',              'fill':'#1f5225','stroke':'#2a6e30','strokeW':0.8},
+  'ISR':{'name':'ИЗРАИЛЬ',           'fill':'#4d3d00','stroke':'#6b5500','strokeW':1.0},
+  'PSE':{'name':'ПАЛЕСТИНА',         'fill':'#4d3d00','stroke':'#6b5500','strokeW':0.7},
+  // Gulf states — warm dark
+  'SAU':{'name':'САУДОВСКАЯ АРАВИЯ', 'fill':'#432a00','stroke':'#5c3800','strokeW':0.8},
+  'ARE':{'name':'ОАЭ',               'fill':'#432a00','stroke':'#5c3800','strokeW':0.8},
+  'KWT':{'name':'КУВЕЙТ',            'fill':'#432a00','stroke':'#5c3800','strokeW':0.8},
+  'QAT':{'name':'КАТАР',             'fill':'#432a00','stroke':'#5c3800','strokeW':0.8},
+  'BHR':{'name':'БАХРЕЙН',           'fill':'#432a00','stroke':'#5c3800','strokeW':0.8},
+  // Oман и Йемен — нейтральные
+  'OMN':{'name':'ОМАН',              'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'YEM':{'name':'ЙЕМЕН',             'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  // Neutral/peripheral — all same dim neutral gray-brown, no blue
+  'IRQ':{'name':'ИРАК',              'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'SYR':{'name':'СИРИЯ',             'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'LBN':{'name':'ЛИВАН',             'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'JOR':{'name':'ИОРДАНИЯ',          'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'EGY':{'name':'ЕГИПЕТ',            'fill':'#111008','stroke':'#201e10','strokeW':0.7},
+  'TUR':{'name':'ТУРЦИЯ',            'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'AFG':{'name':'АФГАНИСТАН',        'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'PAK':{'name':'ПАКИСТАН',          'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'TKM':{'name':'ТУРКМЕНИСТАН',      'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'AZE':{'name':'АЗЕРБАЙДЖАН',       'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'ARM':{'name':'АРМЕНИЯ',           'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'GEO':{'name':'ГРУЗИЯ',            'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'LBY':{'name':'ЛИВИЯ',             'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'SDN':{'name':'СУДАН',             'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'ETH':{'name':'ЭФИОПИЯ',           'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'ERI':{'name':'ЭРИТРЕЯ',           'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'SOM':{'name':'СОМАЛИ',            'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'DJI':{'name':'ДЖИБУТИ',           'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'UZB':{'name':'УЗБЕКИСТАН',        'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'TJK':{'name':'ТАДЖИКИСТАН',       'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+  'CYP':{'name':'КИПР',              'fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6},
+};
+
+// Conflict markers: [lon, lat, id, label, color, type]
+// type: strike|nuclear|city|militia|carrier|base|strait
+// MARKERS: {id, label, lon, lat, color, type, side, hp, maxHp}
+// type: strike|nuclear|city|militia|carrier|base|radar
+// side: usa|iran|israel|gulf|neutral (determines visibility per player)
+// hp: current health, maxHp: max health (null = indestructible cities)
+var MARKERS_DEF = [
+  // ── IRAN: cities, nuclear, airbases, missile sites ────────
+  {id:'teh',      label:'ТЕГЕРАН',             lon:51.4,  lat:35.7,  color:'#22c55e', type:'city',    side:'iran',   hp:null, maxHp:null},
+  {id:'fordow',   label:'ФОРДО ☢',             lon:51.7,  lat:33.1,  color:'#f97316', type:'nuclear', side:'iran',   hp:100, maxHp:100},
+  {id:'nat',      label:'НАТАНЗ ☢',            lon:51.5,  lat:33.7,  color:'#f97316', type:'nuclear', side:'iran',   hp:100, maxHp:100},
+  // Airbases: Mehrabad (Tehran), Shahid Nojeh (Hamedan), Isfahan, Tabriz, Bandar Abbas (Oghab-44 underground)
+  {id:'ab_teh',   label:'а/б Мехрабад',        lon:51.3,  lat:35.7,  color:'#22c55e', type:'airbase', side:'iran',   hp:100, maxHp:100},
+  {id:'ab_ham',   label:'а/б Нодже / Хамедан', lon:48.7,  lat:35.2,  color:'#22c55e', type:'airbase', side:'iran',   hp:100, maxHp:100},
+  {id:'ab_isf',   label:'а/б Исфахан',         lon:51.7,  lat:32.6,  color:'#22c55e', type:'airbase', side:'iran',   hp:100, maxHp:100},
+  {id:'ab_tab',   label:'а/б Тебриз',          lon:46.2,  lat:38.1,  color:'#22c55e', type:'airbase', side:'iran',   hp:100, maxHp:100},
+  {id:'ab_ban',   label:'а/б Огаб-44 (подз.)', lon:56.4,  lat:27.2,  color:'#22c55e', type:'airbase', side:'iran',   hp:100, maxHp:100},
+  // Missile bases: Kermanshah (Bakhtaran), Khorramabad, Shahroud, Isfahan SHIG, Shiraz, Gulf coast
+  {id:'ms_ker',   label:'Ракеты / Керманшах',        lon:47.1,  lat:34.3,  color:'#22c55e', type:'missile', side:'iran',   hp:100, maxHp:100},
+  {id:'ms_khr',   label:'Ракеты / Хоррамабад',       lon:48.4,  lat:33.5,  color:'#22c55e', type:'missile', side:'iran',   hp:100, maxHp:100},
+  {id:'ms_sha',   label:'Ракеты / Шахруд',           lon:55.0,  lat:36.4,  color:'#22c55e', type:'missile', side:'iran',   hp:100, maxHp:100},
+  {id:'ms_isf',   label:'Ракеты / Исфахан',   lon:51.7,  lat:32.4,  color:'#22c55e', type:'missile', side:'iran',   hp:100, maxHp:100},
+  {id:'ms_gulf',  label:'Ракеты / Залив', lon:50.8,  lat:27.5,  color:'#22c55e', type:'missile', side:'iran',   hp:100, maxHp:100},
+  // Radars: Ghadir (1100km), S-300 (300km)
+  {id:'rad_ir1',  label:'РЛС Гадир / Ахваз',   lon:48.7,  lat:31.3,  color:'#22c55e', type:'radar',   side:'iran',   hp:100, maxHp:100, range_km:1100},
+  {id:'rad_ir2',  label:'РЛС Гадир / Тебриз',  lon:46.3,  lat:38.0,  color:'#22c55e', type:'radar',   side:'iran',   hp:100, maxHp:100, range_km:1100},
+  {id:'rad_ir3',  label:'РЛС С-300 / Натанз',  lon:51.6,  lat:33.5,  color:'#22c55e', type:'radar',   side:'iran',   hp:100, maxHp:100, range_km:300},
+  {id:'rad_ir4',  label:'РЛС С-300 / Тегеран', lon:51.2,  lat:35.5,  color:'#22c55e', type:'radar',   side:'iran',   hp:100, maxHp:100, range_km:300},
+
+  // ── ISRAEL: cities, airbases, nuclear, missile ────────────
+  {id:'tlv',      label:'ТЕЛЬ-АВИВ',           lon:34.8,  lat:31.8,  color:'#eab308', type:'city',    side:'israel', hp:null, maxHp:null},
+  {id:'brt',      label:'ХЕЗБОЛЛА',            lon:35.5,  lat:33.9,  color:'#4a7a5a', type:'militia', side:'iran', hp:null, maxHp:null},
+  // Airbases: Nevatim (F-35, main), Hatzerim (F-15I/F-16I), Ramon (F-16I), Tel Nof (F-15), Ramat David (north)
+  {id:'ab_nev',   label:'а/б Неватим',         lon:34.9,  lat:31.2,  color:'#eab308', type:'airbase', side:'israel', hp:100, maxHp:100},
+  {id:'ab_hat',   label:'а/б Хацерим',         lon:34.7,  lat:31.2,  color:'#eab308', type:'airbase', side:'israel', hp:100, maxHp:100},
+  {id:'ab_ram',   label:'а/б Рамон',           lon:34.9,  lat:30.8,  color:'#eab308', type:'airbase', side:'israel', hp:100, maxHp:100},
+  {id:'ab_tnof',  label:'а/б Тель-Ноф',        lon:34.8,  lat:31.8,  color:'#eab308', type:'airbase', side:'israel', hp:100, maxHp:100},
+  {id:'ab_rmd',   label:'а/б Рамат-Давид',     lon:35.2,  lat:32.7,  color:'#eab308', type:'airbase', side:'israel', hp:100, maxHp:100},
+  // Nuclear: Dimona (Negev Nuclear Research Center), Sdot Micha (Jericho missiles)
+  {id:'nuc_dim',  label:'Димона ☢',            lon:35.1,  lat:30.9,  color:'#f97316', type:'nuclear', side:'israel', hp:100, maxHp:100},
+  {id:'ms_sdot',  label:'Сдот-Миха (Иерихон)', lon:34.9,  lat:31.7,  color:'#eab308', type:'missile', side:'israel', hp:100, maxHp:100},
+  // Radars: AN/TPY-2 at Nevatim, EL/M-2080 Green Pine
+  {id:'rad_il1',  label:'AN/TPY-2 / Неватим',  lon:34.9,  lat:31.2,  color:'#eab308', type:'radar',   side:'israel', hp:100, maxHp:100, range_km:900},
+  {id:'rad_il2',  label:'EL/M-2080 / Центр',   lon:34.8,  lat:32.1,  color:'#eab308', type:'radar',   side:'israel', hp:100, maxHp:100, range_km:500},
+
+  // ── USA: carriers, bases, airbases ────────────────────────
+  {id:'cvn',      label:'USS CVN-72',           lon:50.5,  lat:26.2,  color:'#3b82f6', type:'carrier', side:'usa',    hp:100, maxHp:100},
+  // Al Udeid (Qatar) — CENTCOM + largest base
+  {id:'centcom',  label:'CENTCOM / Аль-Удейд',  lon:51.31, lat:25.12, color:'#3b82f6', type:'base',    side:'usa',    hp:100, maxHp:100},
+  // Al Dhafra (UAE) — F-35A, RQ-170, KC-10
+  {id:'dhafra',   label:'а/б Аль-Дафра (ОАЭ)', lon:54.49, lat:24.25, color:'#3b82f6', type:'airbase', side:'usa',    hp:100, maxHp:100},
+  // Ali Al Salem (Kuwait) — 386th AEW
+  {id:'ali_salem',label:'а/б Аль-Салем (Кувейт)',lon:47.52, lat:29.43, color:'#3b82f6', type:'airbase', side:'usa',    hp:100, maxHp:100},
+  // Prince Sultan (Saudi) — F-16, KC-135, E-3 AWACS
+  {id:'psab',     label:'а/б Принц Султан (СА)',lon:47.5,  lat:24.1,  color:'#3b82f6', type:'airbase', side:'usa',    hp:100, maxHp:100},
+  // Muwaffaq Salti (Jordan) — 332nd AEW, Azraq
+  {id:'muwaffaq', label:'а/б Муваффак / Азрак', lon:36.8,  lat:31.8,  color:'#3b82f6', type:'airbase', side:'usa',    hp:100, maxHp:100},
+  // NSA Bahrain — 5th Fleet
+  {id:'nsa_bah',  label:'НСА Бахрейн (5-й флот)',lon:50.6, lat:26.2,  color:'#3b82f6', type:'base',    side:'usa',    hp:100, maxHp:100},
+  // Ain al-Assad (Iraq) — western Iraq
+  {id:'ain_asad', label:'а/б Айн-эль-Асад',     lon:42.4,  lat:33.4,  color:'#3b82f6', type:'airbase', side:'usa',    hp:100, maxHp:100},
+  // Radars: AN/FPS-132 Udeid, AN/TPY-2 Prince Sultan, AN/TPY-2 Jordan
+  {id:'rad_us1',  label:'AN/FPS-132 / Аль-Удейд',lon:51.31,lat:25.12, color:'#3b82f6', type:'radar',   side:'usa',    hp:100, maxHp:100, range_km:2000},
+  {id:'rad_us2',  label:'AN/TPY-2 / Принц Султан',lon:47.5, lat:24.1, color:'#3b82f6', type:'radar',   side:'usa',    hp:100, maxHp:100, range_km:1200},
+  {id:'rad_us3',  label:'AN/TPY-2 / Иордания',   lon:36.2,  lat:31.8, color:'#3b82f6', type:'radar',   side:'usa',    hp:100, maxHp:100, range_km:1200},
+
+  // ── GULF: cities, airbases, missile defense ───────────────
+  {id:'riy',      label:'ЭР-РИЯД',             lon:46.7,  lat:24.7,  color:'#f97316', type:'city',    side:'gulf',   hp:null, maxHp:null},
+  {id:'hth',      label:'ХУСИТЫ',              lon:44.2,  lat:15.4,  color:'#4a7a5a', type:'militia', side:'iran',   hp:null, maxHp:null},
+  // Saudi airbases: King Abdulaziz (Dhahran/Eastern), King Khalid (Riyadh)
+  {id:'ab_dah',   label:'а/б Дахран',          lon:50.2,  lat:26.3,  color:'#f97316', type:'airbase', side:'gulf',   hp:100, maxHp:100},
+  {id:'ab_kkia',  label:'а/б Кинг-Халид',      lon:46.7,  lat:24.9,  color:'#f97316', type:'airbase', side:'gulf',   hp:100, maxHp:100},
+  // UAE: Al Minhad airbase (Dubai)
+  {id:'ab_min',   label:'а/б Аль-Минхад (ОАЭ)',lon:55.4,  lat:25.0,  color:'#f97316', type:'airbase', side:'gulf',   hp:100, maxHp:100},
+  // Patriot radar batteries
+  {id:'rad_gcc1', label:'Patriot / Эр-Рияд',   lon:46.8,  lat:24.9,  color:'#f97316', type:'radar',   side:'gulf',   hp:100, maxHp:100, range_km:400},
+  {id:'rad_gcc2', label:'Patriot / Абкайк',    lon:49.7,  lat:26.4,  color:'#f97316', type:'radar',   side:'gulf',   hp:100, maxHp:100, range_km:400},
+  {id:'rad_gcc3', label:'Patriot / Дахран',    lon:50.2,  lat:26.3,  color:'#f97316', type:'radar',   side:'gulf',   hp:100, maxHp:100, range_km:400},
+];
+
+// Mutable HP state (separate from definition so resets cleanly)
+var markerHp = {};
+function initMarkerHp(){
+  markerHp = {};
+  MARKERS_DEF.forEach(function(m){ if(m.maxHp!==null) markerHp[m.id]=m.maxHp; });
+}
+initMarkerHp();
+
+function getMarkerHp(id){ return markerHp[id]!==undefined ? markerHp[id] : 100; }
+function damageMarker(id, dmg){
+  if(markerHp[id]===undefined) return;
+  markerHp[id]=Math.max(0, markerHp[id]-dmg);
+  renderMapMarkers();
+}
+
+// Reset on new game
+var _origInitMarkerHp = initMarkerHp;
+
+
+var LABEL_SHOW = ['IRN','SAU','EGY','YEM','IRQ','ARE','OMN','SYR','JOR'];
+
+(function initMap(){
+  var svg = d3.select('#map-svg');
+  var container = document.getElementById('map-container');
+
+  // Projection: Mercator centered on Middle East
+  var W = 480, H = 480;
+
+  var projection = d3.geoMercator()
+    .center([49.5, 25.598])
+    .scale(834)
+    .translate([W/2, H/2]);
+
+  var path = d3.geoPath().projection(projection);
+
+  // Sea background
+  svg.append('rect').attr('width','100%').attr('height','100%').attr('fill','#060e1a');
+
+  // SVG hatch patterns for captured territory overlay
+  var defs = svg.append('defs');
+  var hatches = [
+    {id:'hatch-usa',   color:'#111f3d'},
+    {id:'hatch-iran',  color:'#133617'},
+    {id:'hatch-israel',color:'#322900'},
+    {id:'hatch-gulf',  color:'#2c1b00'},
+  ];
+  hatches.forEach(function(h){
+    var pat = defs.append('pattern')
+      .attr('id', h.id)
+      .attr('patternUnits','userSpaceOnUse')
+      .attr('width', 7).attr('height', 7)
+      .attr('patternTransform','rotate(45 0 0)');
+    pat.append('rect').attr('width',8).attr('height',8).attr('fill','none');
+    pat.append('line')
+      .attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',8)
+      .attr('stroke', h.color)
+      .attr('stroke-width', 5);
+  });
+
+  // Load world TopoJSON from CDN
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(function(world){
+    document.getElementById('map-loading').style.display='none';
+
+    var countries = topojson.feature(world, world.objects.countries);
+
+    // Single group that everything zooms together inside
+    var zoomGroup = svg.append('g').attr('class','zoom-group');
+
+    var numToAlpha = {
+      '364':'IRN','368':'IRQ','376':'ISR','682':'SAU','784':'ARE','887':'YEM',
+      '760':'SYR','792':'TUR','422':'LBN','400':'JOR','414':'KWT','634':'QAT',
+      '048':'BHR','512':'OMN','818':'EGY','004':'AFG','586':'PAK','795':'TKM',
+      '031':'AZE','051':'ARM','268':'GEO','434':'LBY','729':'SDN','231':'ETH',
+      '232':'ERI','706':'SOM','262':'DJI','860':'UZB','762':'TJK','275':'PSE',
+      '196':'CYP','050':'BGD',
+      // Somaliland — unrecognized territory, Natural Earth assigns -99 or 736
+      '-099':'SOL','736':'SOL'
+    };
+
+    // Add Somaliland to FOCUS_ISO dynamically
+    FOCUS_ISO['SOL']={'name':'','fill':'#0e0e08','stroke':'#1a1a10','strokeW':0.6};
+
+    // Expose numToAlpha for onMetricsUpdate ally recoloring
+    window._numToAlpha = numToAlpha;
+
+    // Countries — all with normal inline stroke (including GCC and Israel)
+    var g = zoomGroup.append('g').attr('class','countries');
+    var countryPaths = g.selectAll('path')
+      .data(countries.features)
+      .enter().append('path')
+      .attr('d', path)
+      .attr('fill', function(d){
+        var iso = numToAlpha[String(d.id).padStart(3,'0')];
+        return (iso && FOCUS_ISO[iso]) ? FOCUS_ISO[iso].fill : '#090d14';
+      })
+      .attr('stroke', function(d){
+        var iso = numToAlpha[String(d.id).padStart(3,'0')];
+        return (iso && FOCUS_ISO[iso]) ? FOCUS_ISO[iso].stroke : '#111820';
+      })
+      .attr('stroke-width', function(d){
+        var iso = numToAlpha[String(d.id).padStart(3,'0')];
+        return (iso && FOCUS_ISO[iso]) ? FOCUS_ISO[iso].strokeW : 0.4;
+      })
+      .attr('stroke-linejoin','round');
+
+    // Expose for ally recoloring in onMetricsUpdate
+    // Expose for ally recoloring in onMetricsUpdate
+    window._mapCountryPaths = countryPaths;
+
+    // Outer border overlays — topojson.merge dissolves internal borders within
+    // each group so only the exterior boundary gets the thicker stroke
+    var borderGroups = [
+      { isos: ['IRN'],                          stroke: '#1e4020', w: 1.2 },
+      { isos: ['ISR','PSE'],                    stroke: '#504000', w: 1.2 },
+      { isos: ['SAU','ARE','KWT','QAT','BHR'],  stroke: '#3a2800', w: 1.2 },
+    ];
+    borderGroups.forEach(function(bg){
+      try{
+        var geoms = world.objects.countries.geometries.filter(function(d){
+          var iso = numToAlpha[String(d.id).padStart(3,'0')];
+          return bg.isos.indexOf(iso) >= 0;
+        });
+        if(!geoms.length) return;
+        var merged = topojson.merge(world, geoms);
+        zoomGroup.append('path')
+          .datum(merged)
+          .attr('d', path)
+          .attr('fill','none')
+          .attr('stroke', bg.stroke)
+          .attr('stroke-width', bg.w)
+          .attr('stroke-linejoin','round')
+          .attr('pointer-events','none');
+      } catch(e){ console.warn('Border overlay failed:', bg.isos, e); }
+    });
+
+    // ── ZOOM ──────────────────────────────────────────────────
+    var currentTransform = d3.zoomIdentity;
+    window._mapScale = 1;
+    var zoom = d3.zoom()
+      .scaleExtent([1, 8])
+      .on('zoom', function(event){
+        currentTransform = event.transform;
+        window._mapScale = event.transform.k;
+        zoomGroup.attr('transform', event.transform);
+        // Re-render markers so they counter-scale with zoom
+        if(typeof renderMapMarkers==='function') renderMapMarkers();
+      });
+    svg.call(zoom).on('dblclick.zoom', null);
+    window.mapZoom = function(factor){svg.transition().duration(300).call(zoom.scaleBy, factor);};
+    window.mapReset = function(){svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);window._mapScale=1;};
+    svg.style('cursor','grab');
+    svg.on('mousedown.cursor', function(){svg.style('cursor','grabbing');});
+    svg.on('mouseup.cursor',   function(){svg.style('cursor','grab');});
+
+    // Country labels — inside zoomGroup
+    var labelData = countries.features.filter(function(d){
+      var iso = numToAlpha[String(d.id).padStart(3,'0')];
+      return iso && LABEL_SHOW.indexOf(iso) >= 0;
+    });
+    var labelG = zoomGroup.append('g').attr('class','labels');
+    labelG.selectAll('text')
+      .data(labelData)
+      .enter().append('text')
+      .attr('transform', function(d){ var c=path.centroid(d); return 'translate('+c+')'; })
+      .attr('text-anchor','middle').attr('dy','0.3em')
+      .style('font-family','DM Mono, monospace').style('font-size','8px')
+      .style('fill','rgba(90,140,180,0.38)').style('pointer-events','none')
+      .style('letter-spacing','1px')
+      .text(function(d){
+        var iso = numToAlpha[String(d.id).padStart(3,'0')];
+        return iso && FOCUS_ISO[iso] ? FOCUS_ISO[iso].name : '';
+      });
+
+    // Store projection globally for renderMapMarkers
+    window._mapProjection = projection;
+    window._mapZoomGroup  = zoomGroup;
+
+    // Initial render of markers + radar rings
+    renderMapMarkers();
+
+    // Init province layer — pass projection and path function
+    if(typeof window.initProvinces==='function') window.initProvinces(projection, zoomGroup, path);
+
+  }).catch(function(err){
+    document.getElementById('map-loading').textContent = 'КАРТА НЕДОСТУПНА (нет сети)';
+    document.getElementById('map-loading').style.display='flex';
+    console.warn('Map load error:', err);
+  });
+})();
+
+// Hook: called after each metrics update to sync map pulse rings
+// Map diplKey → ISO country codes for fill recoloring
+var DIPL_ISO_MAP = {
+  turkey:'TUR', iraq:'IRQ', syria:'SYR', jordan:'JOR', egypt:'EGY',
+  pakistan:'PAK', lebanon:'LBN', qatar:'QAT', uae:'ARE', bahrain:'BHR',
+  kurdistan:null  // no ISO for KRG
+};
+// Lighter ally fills per player side (noticeably lighter than base country color)
+var ALLY_MAP_FILLS = {
+  usa:   '#111f3d',
+  iran:  '#133617',
+  israel:'#322900',
+  gulf:  '#2c1b00',
+};
+
+window.onMetricsUpdate = function(){
+  if(typeof renderMapMarkers==='function') renderMapMarkers();
+  if(!window.d3 || !window._mapCountryPaths) return;
+  // Recolor allied countries on the main map
+  window._mapCountryPaths.attr('fill', function(d){
+    var iso = window._numToAlpha && window._numToAlpha[String(d.id).padStart(3,'0')];
+    if(iso && FOCUS_ISO[iso]){
+      // Check if any dipl country with this ISO is allied (≥90) with current player
+      var allied = false;
+      Object.keys(DIPL_ISO_MAP).forEach(function(key){
+        if(DIPL_ISO_MAP[key]===iso && getDiplInf(key)>=90) allied=true;
+      });
+      if(allied && ALLY_MAP_FILLS[side]) return ALLY_MAP_FILLS[side];
+      return FOCUS_ISO[iso].fill;
+    }
+    return '#090d14';
+  });
+};
+</script>
+</body>
+</html>
